@@ -5,11 +5,15 @@ int wh;
 
 int old_tl;
 
+void *ylpcsCreateHandler(void *character, void *canvas,
+			 void *father, void *name);
+
 struct {
 	int x;
 	int y;
 	int w;
 	int h;
+	Entity *s;
 } pc = {530, 400, 32, 50};
 
 Entity *rw_c;
@@ -23,10 +27,12 @@ void repose_cam(Entity *rw)
 	ww = ywRectW(wid_pix);
 	wh = ywRectH(wid_pix);
 
-	x = pc.x - ww / 2 + pc.w / 2;
-	y = pc.y - wh / 2 - pc.h / 2;
+	x = pc.x - ww / 2;
+	y = pc.y - wh / 2;
+
 	ywPosSetInts(yeGet(rw_c, "cam"), x, y);
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
+	ylpcsHandlerSetPosXY(pc.s, pc.x, pc.y);
 }
 
 void *redwall_action(int nb, void **args)
@@ -34,14 +40,22 @@ void *redwall_action(int nb, void **args)
 	Entity *rw = args[0];
 	Entity *evs = args[1];
 	static int lr = 0, ud = 0;
+	static double mv_acc;
+	double mv_pix = ywidGetTurnTimer() / (double)10000;
+
+	mv_acc += mv_pix - floor(mv_pix);
+	if (mv_acc > 1) {
+		mv_pix += floor(mv_acc);
+		mv_acc -= floor(mv_acc);
+	}
+	printf("ywidGetTurnTimer: %f %f %f\n", mv_pix, floor(mv_pix), mv_acc);
 
 	yeveDirFromDirGrp(evs, yeGet(rw, "u_grp"), yeGet(rw, "d_grp"),
 			  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
 			  &ud, &lr);
 
-	pc.x += 5 * lr;
-	pc.y += 5 * ud;
-	printf("%d %d\n", lr, ud);
+	pc.x += mv_pix * lr;
+	pc.y += mv_pix * ud;
 	repose_cam(rw);
 	ywPosPrint(yeGet(rw_c, "cam"));
 	return (void *)ACTION;
@@ -50,6 +64,7 @@ void *redwall_action(int nb, void **args)
 void* redwall_destroy(int nb, void **args)
 {
 	ywSetTurnLengthOverwrite(old_tl);
+	yeDestroy(pc.s);
 	return NULL;
 }
 
@@ -90,6 +105,19 @@ void *redwall_init(int nb, void **args)
 	printf("rr: %p - %d - %d\n", rr, ww, wh);
 	ww = ywRectW(yeGet(rw, "wid-pix"));
 	wh = ywRectH(yeGet(rw, "wid-pix"));
+
+	yeAutoFree Entity *pcs = yeCreateArray(NULL, NULL);
+
+	YEntityBlock {
+		pcs.sex = "female";
+		pcs.clothes = {
+		0: "feet/ghillies_female_no_th-sh.png",
+		1:	"torso/dress_female/commune_dress.png",
+		2:	"hair/female/ponytail/brunette2.png"
+		};
+		pcs.type = "light";
+	}
+	pc.s = ylpcsCreateHandler(pcs, rw_c, NULL, NULL);
 
 	old_tl = ywGetTurnLengthOverwrite();
 	ywSetTurnLengthOverwrite(-1);
