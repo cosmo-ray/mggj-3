@@ -1,0 +1,14 @@
+{ "columns":62,
+ "image":"NES Tile Set Cemetery Files\/NES_TileSet_Cemetery_Full_Sheet.png",
+ "imageheight":500,
+ "imagewidth":1000,
+ "margin":0,
+ "name":"NES_TileSet_Cemetery_Full_Sheet",
+ "spacing":0,
+ "tilecount":1922,
+ "tiledversion":"1.4.2",
+ "tileheight":16,
+ "tilewidth":16,
+ "type":"tileset",
+ "version":1.4
+}
