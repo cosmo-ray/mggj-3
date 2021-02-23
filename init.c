@@ -8,18 +8,31 @@ int old_tl;
 void *ylpcsCreateHandler(void *character, void *canvas,
 			 void *father, void *name);
 
+#include "enemies.h"
+
 struct {
 	int x;
 	int y;
 	int w;
 	int h;
 	Entity *s;
-} pc = {530, 400, 32, 50};
+} pc = {530, 400, 32, 50, NULL};
 
 Entity *rw_c;
 Entity *rw_uc;
 
-void repose_cam(Entity *rw)
+static void repose_enemies(void)
+{
+	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
+		yeAutoFree Entity *pos = ywPosCreate(enemies[i].x, enemies[i].y,
+						     NULL, NULL);
+
+		yesCall(ygGet("sprite-man.handlerSetPos"), enemies[i].s, pos);
+
+	}
+}
+
+static void repose_cam(Entity *rw)
 {
 	int x, y;
 	Entity *wid_pix = yeGet(rw, "wid-pix");
@@ -33,6 +46,8 @@ void repose_cam(Entity *rw)
 	ywPosSetInts(yeGet(rw_c, "cam"), x, y);
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
 	ylpcsHandlerSetPosXY(pc.s, pc.x, pc.y);
+
+	repose_enemies();
 }
 
 void *redwall_action(int nb, void **args)
@@ -41,7 +56,7 @@ void *redwall_action(int nb, void **args)
 	Entity *evs = args[1];
 	static int lr = 0, ud = 0;
 	static double mv_acc;
-	double mv_pix = ywidGetTurnTimer() / (double)10000;
+	double mv_pix = 2 * ywidGetTurnTimer() / (double)10000;
 
 	mv_acc += mv_pix - floor(mv_pix);
 	if (mv_acc > 1) {
@@ -82,7 +97,7 @@ void *redwall_init(int nb, void **args)
 
 	YEntityBlock {
 		rw.entries = {};
-		rw.background = "rgba: 127 127 127 255";
+		rw.background = "rgba: 0 0 0 255";
 		rw["cnt-type"] = "stack";
 		rw.action = redwall_action;
 		rw.destroy = redwall_destroy;
@@ -93,18 +108,20 @@ void *redwall_init(int nb, void **args)
 	}
 
 	rw_c = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
+	yeCreateInt(2, rw_c, "mergable");
+	ywSizeCreate(2048, 2048, rw_c, "merge_surface_size");
 	rw_uc = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
 	ywPosCreateInts(0, 0, rw_c, "cam");
 	ywPosCreateInts(0, 0, rw_uc, "cam");
 	yePrint(rw);
 	void *ret = ywidNewWidget(rw, "container");
-
-	void *rr = yesCall(ygGet("tiled.fileToCanvas"),
-			   "./pere-lachaise.json", rw_c, rw_uc);
-
-	printf("rr: %p - %d - %d\n", rr, ww, wh);
 	ww = ywRectW(yeGet(rw, "wid-pix"));
 	wh = ywRectH(yeGet(rw, "wid-pix"));
+
+	void *rr = yesCall(ygGet("tiled.fileToCanvas"),
+			   "./pere-lachaise.json", rw_c, rw_uc, 1);
+
+	printf("rr: %p - %d - %d\n", rr, ww, wh);
 
 	yeAutoFree Entity *pcs = yeCreateArray(NULL, NULL);
 
@@ -112,12 +129,25 @@ void *redwall_init(int nb, void **args)
 		pcs.sex = "female";
 		pcs.clothes = {
 		0: "feet/ghillies_female_no_th-sh.png",
-		1:	"torso/dress_female/commune_dress.png",
-		2:	"hair/female/ponytail/brunette2.png"
+		1: "torso/dress_female/commune_dress.png",
+		2: "hair/female/ponytail/brunette2.png"
 		};
 		pcs.type = "light";
 	}
 	pc.s = ylpcsCreateHandler(pcs, rw_c, NULL, NULL);
+
+	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
+		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
+		Entity *sprite = yeCreateArray(s, "sprite");
+
+		yeCreateString(enemies[i].t->spath, sprite, "path");
+		yeCreateInt(enemies[i].t->sprite_len, sprite, "length");
+		yeCreateInt(enemies[i].t->h, sprite, "size");
+		yeCreateInt(32, sprite, "src-pos");
+		yeCreateString(enemies[i].t->spath, sprite, "path");
+
+		enemies[i].s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
+	}
 
 	old_tl = ywGetTurnLengthOverwrite();
 	ywSetTurnLengthOverwrite(-1);
@@ -130,9 +160,6 @@ void *init_redwall(int nb, void **args)
 	Entity *init = yeCreateArray(NULL, NULL);
 
 	YEntityBlock {
-		mod.main = [];
-		mod.main["<type>"] = "redwall";
-
 		init.name = "redwall";
 		init.callback = redwall_init;
 
