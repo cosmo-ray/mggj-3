@@ -69,8 +69,21 @@ void *redwall_action(int nb, void **args)
 			  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
 			  &ud, &lr);
 
+	printf("%d %d\n",
+	       yeGetIntAt(rw_c, "tiled-wpix"),
+	       yeGetIntAt(rw_c, "tiled-hpix"));
 	pc.x += mv_pix * lr;
+	if (pc.x + pc.w > yeGetIntAt(rw_c, "tiled-wpix")) {
+		pc.x = yeGetIntAt(rw_c, "tiled-wpix") - pc.w;
+	} else if (pc.x < 0) {
+		pc.x = 0;
+	}
 	pc.y += mv_pix * ud;
+	if (pc.y + pc.h > yeGetIntAt(rw_c, "tiled-hpix")) {
+		pc.y = yeGetIntAt(rw_c, "tiled-wpix") - pc.h;
+	} else if (pc.y < 0) {
+		pc.y = 0;
+	}
 	repose_cam(rw);
 	ywPosPrint(yeGet(rw_c, "cam"));
 	return (void *)ACTION;
