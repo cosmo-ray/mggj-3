@@ -16,7 +16,7 @@ struct {
 	int w;
 	int h;
 	Entity *s;
-} pc = {530, 400, 32, 50, NULL};
+} pc = {530, 460, 32, 50, NULL};
 
 Entity *rw_c;
 Entity *rw_uc;
@@ -72,6 +72,7 @@ void *redwall_action(int nb, void **args)
 	printf("%d %d\n",
 	       yeGetIntAt(rw_c, "tiled-wpix"),
 	       yeGetIntAt(rw_c, "tiled-hpix"));
+	int ox = pc.x, oy = pc.y;
 	pc.x += mv_pix * lr;
 	if (pc.x + pc.w > yeGetIntAt(rw_c, "tiled-wpix")) {
 		pc.x = yeGetIntAt(rw_c, "tiled-wpix") - pc.w;
@@ -83,6 +84,19 @@ void *redwall_action(int nb, void **args)
 		pc.y = yeGetIntAt(rw_c, "tiled-wpix") - pc.h;
 	} else if (pc.y < 0) {
 		pc.y = 0;
+	}
+
+	Entity *pc_rect = ywRectReCreateInts(pc.x + 15, pc.y + 40, 15,
+					     10, NULL, NULL);
+	yeAutoFree Entity *col =
+		ywCanvasNewCollisionsArrayWithRectangle(rw_c, pc_rect);
+
+	YE_FOREACH(col, c) {
+		if (yeGetIntAt(c, "Collision")) {
+			pc.x = ox;
+			pc.y = oy;
+			break;
+		}
 	}
 	repose_cam(rw);
 	ywPosPrint(yeGet(rw_c, "cam"));
