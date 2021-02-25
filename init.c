@@ -48,6 +48,7 @@ static void repose_cam(Entity *rw)
 	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
 					     NULL, NULL);
 	yesCall(ygGet("sprite-man.handlerSetPos"), pc.s, pos);
+	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
 
 	repose_enemies();
 }
@@ -55,25 +56,21 @@ static void repose_cam(Entity *rw)
 static void img_down(Entity *arg)
 {
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 0);
-	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
 }
 
 static void img_up(Entity *arg)
 {
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 25);
-	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
 }
 
 static void img_right(Entity *arg)
 {
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 50);
-	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
 }
 
 static void img_left(Entity *arg)
 {
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 75);
-	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
 }
 
 static void (*callbacks[4])(Entity *) = {img_up, img_down, img_right, img_left};
@@ -126,6 +123,9 @@ void *redwall_action(int nb, void **args)
 			break;
 		}
 	}
+
+	if (lr || ud)
+		yesCall(ygGet("sprite-man.handlerAdvance"), pc.s);
 	repose_cam(rw);
 	ywPosPrint(yeGet(rw_c, "cam"));
 	return (void *)ACTION;
@@ -183,7 +183,7 @@ void *redwall_init(int nb, void **args)
 		pcs.sex = "female";
 		pcs.sprite = {};
 		pcs.sprite.path = "mc_placeholder.png";
-		pcs.sprite.sprite_len = 4;
+		pcs.sprite.length = 4;
 		pcs.sprite.size = 25;
 		pcs.sprite["src-pos"] = 0;
 	}
