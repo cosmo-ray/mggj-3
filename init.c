@@ -16,7 +16,7 @@ struct {
 	int w;
 	int h;
 	Entity *s;
-} pc = {530, 460, 32, 50, NULL};
+} pc = {530, 460, 25, 25, NULL};
 
 Entity *rw_c;
 Entity *rw_uc;
@@ -45,10 +45,38 @@ static void repose_cam(Entity *rw)
 
 	ywPosSetInts(yeGet(rw_c, "cam"), x, y);
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
-	ylpcsHandlerSetPosXY(pc.s, pc.x, pc.y);
+	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
+					     NULL, NULL);
+	yesCall(ygGet("sprite-man.handlerSetPos"), pc.s, pos);
 
 	repose_enemies();
 }
+
+static void img_down(Entity *arg)
+{
+	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 0);
+	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
+}
+
+static void img_up(Entity *arg)
+{
+	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 25);
+	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
+}
+
+static void img_right(Entity *arg)
+{
+	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 50);
+	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
+}
+
+static void img_left(Entity *arg)
+{
+	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 75);
+	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
+}
+
+static void (*callbacks[4])(Entity *) = {img_up, img_down, img_right, img_left};
 
 void *redwall_action(int nb, void **args)
 {
@@ -67,7 +95,7 @@ void *redwall_action(int nb, void **args)
 
 	yeveDirFromDirGrp(evs, yeGet(rw, "u_grp"), yeGet(rw, "d_grp"),
 			  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
-			  &ud, &lr);
+			  &ud, &lr, callbacks, NULL);
 
 	printf("%d %d\n",
 	       yeGetIntAt(rw_c, "tiled-wpix"),
@@ -86,8 +114,8 @@ void *redwall_action(int nb, void **args)
 		pc.y = 0;
 	}
 
-	Entity *pc_rect = ywRectReCreateInts(pc.x + 15, pc.y + 40, 15,
-					     10, NULL, NULL);
+	Entity *pc_rect = ywRectReCreateInts(pc.x + 6, pc.y, 10,
+					     pc.h, NULL, NULL);
 	yeAutoFree Entity *col =
 		ywCanvasNewCollisionsArrayWithRectangle(rw_c, pc_rect);
 
@@ -140,7 +168,6 @@ void *redwall_init(int nb, void **args)
 	rw_uc = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
 	ywPosCreateInts(0, 0, rw_c, "cam");
 	ywPosCreateInts(0, 0, rw_uc, "cam");
-	yePrint(rw);
 	void *ret = ywidNewWidget(rw, "container");
 	ww = ywRectW(yeGet(rw, "wid-pix"));
 	wh = ywRectH(yeGet(rw, "wid-pix"));
@@ -154,14 +181,13 @@ void *redwall_init(int nb, void **args)
 
 	YEntityBlock {
 		pcs.sex = "female";
-		pcs.clothes = {
-		0: "feet/ghillies_female_no_th-sh.png",
-		1: "torso/dress_female/commune_dress.png",
-		2: "hair/female/ponytail/brunette2.png"
-		};
-		pcs.type = "light";
+		pcs.sprite = {};
+		pcs.sprite.path = "mc_placeholder.png";
+		pcs.sprite.sprite_len = 4;
+		pcs.sprite.size = 25;
+		pcs.sprite["src-pos"] = 0;
 	}
-	pc.s = ylpcsCreateHandler(pcs, rw_c, NULL, NULL);
+	pc.s = yesCall(ygGet("sprite-man.createHandler"), pcs, rw_c);
 
 	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
 		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
