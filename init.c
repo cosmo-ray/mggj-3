@@ -16,7 +16,7 @@ struct {
 	int w;
 	int h;
 	Entity *s;
-} pc = {530, 460, 25, 25, NULL};
+} pc = {530, 460, 24, 24, NULL};
 
 Entity *rw_c;
 Entity *rw_uc;
@@ -60,17 +60,17 @@ static void img_down(Entity *arg)
 
 static void img_up(Entity *arg)
 {
-	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 25);
+	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 24);
 }
 
 static void img_right(Entity *arg)
 {
-	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 50);
+	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 48);
 }
 
 static void img_left(Entity *arg)
 {
-	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 75);
+	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 72);
 }
 
 static void (*callbacks[4])(Entity *) = {img_up, img_down, img_right, img_left};
@@ -183,8 +183,8 @@ void *redwall_init(int nb, void **args)
 		pcs.sex = "female";
 		pcs.sprite = {};
 		pcs.sprite.path = "mc_placeholder.png";
-		pcs.sprite.length = 4;
-		pcs.sprite.size = 25;
+		pcs.sprite.length = 6;
+		pcs.sprite.size = 24;
 		pcs.sprite["src-pos"] = 0;
 	}
 	pc.s = yesCall(ygGet("sprite-man.createHandler"), pcs, rw_c);
