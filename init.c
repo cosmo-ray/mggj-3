@@ -16,6 +16,7 @@ struct {
 	int w;
 	int h;
 	Entity *s;
+	Entity *bullets;
 } pc = {530, 460, 24, 24, NULL};
 
 Entity *rw_c;
@@ -75,6 +76,13 @@ static void img_left(Entity *arg)
 
 static void (*callbacks[4])(Entity *) = {img_up, img_down, img_right, img_left};
 
+void create_bullet(void)
+{
+	Entity *b = yeCreateArray(pc.bullets, NULL);
+
+	ywCanvasNewRectangle(rw_c, pc.x, pc.y, 5,  5, "rgba: 255 100 20 200");
+}
+
 void *redwall_action(int nb, void **args)
 {
 	Entity *rw = args[0];
@@ -111,6 +119,12 @@ void *redwall_action(int nb, void **args)
 		pc.y = 0;
 	}
 
+	int btn = 0;
+	if (yevMouseDown(evs, &btn)) {
+		printf("mouse down\n");
+		create_bullet();
+	}
+
 	Entity *pc_rect = ywRectReCreateInts(pc.x + 6, pc.y, 10,
 					     pc.h, NULL, NULL);
 	yeAutoFree Entity *col =
@@ -135,6 +149,7 @@ void* redwall_destroy(int nb, void **args)
 {
 	ywSetTurnLengthOverwrite(old_tl);
 	yeDestroy(pc.s);
+	yeDestroy(pc.bullets);
 	return NULL;
 }
 
@@ -188,6 +203,7 @@ void *redwall_init(int nb, void **args)
 		pcs.sprite["src-pos"] = 0;
 	}
 	pc.s = yesCall(ygGet("sprite-man.createHandler"), pcs, rw_c);
+	pc.bullets = yeCreateArray(NULL, NULL);
 
 	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
 		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
