@@ -76,11 +76,27 @@ static void img_left(Entity *arg)
 
 static void (*callbacks[4])(Entity *) = {img_up, img_down, img_right, img_left};
 
-void create_bullet(void)
+void create_bullet(Entity *mouse_pos)
 {
 	Entity *b = yeCreateArray(pc.bullets, NULL);
+	yeAutoFree Entity *cp_pos = ywPosCreate(pc.x, pc.y, NULL, NULL);
 
-	ywCanvasNewRectangle(rw_c, pc.x, pc.y, 5,  5, "rgba: 255 100 20 200");
+	Entity *bc = ywCanvasNewRectangle(rw_c, pc.x, pc.y, 5,  5,
+					  "rgba: 255 100 20 200");
+	yeAutoFree Entity *seg = ywSegmentFromPos(cp_pos, mouse_pos, NULL, NULL);
+	int dis = ywPosDistance(cp_pos, mouse_pos );
+	printf("VVVV\n");
+	ywPosPrint(mouse_pos);
+	ywPosPrint(cp_pos);
+	ywPosPrint(seg);
+	printf("%d: %f %f\n", dis, 1.0 * ywSizeW(seg) / dis,
+	       1.0 * ywSizeH(seg) / dis);
+	printf("^^^^^\n");
+
+	Entity *dir = yeCreateArray(b, "dir");
+	yeCreateFloat((1.0 * ywSizeW(seg) / dis) * 5, dir, "x");
+	yeCreateFloat((1.0 * ywSizeH(seg) / dis) * 5, dir, "y");
+	yePushBack(b, bc, NULL);
 }
 
 void *redwall_action(int nb, void **args)
@@ -122,7 +138,7 @@ void *redwall_action(int nb, void **args)
 	int btn = 0;
 	if (yevMouseDown(evs, &btn)) {
 		printf("mouse down\n");
-		create_bullet();
+		create_bullet(yevMousePos(evs));
 	}
 
 	Entity *pc_rect = ywRectReCreateInts(pc.x + 6, pc.y, 10,
@@ -140,8 +156,16 @@ void *redwall_action(int nb, void **args)
 
 	if (lr || ud)
 		yesCall(ygGet("sprite-man.handlerAdvance"), pc.s);
+
+	/* move bulets */
+	YE_FOREACH(pc.bullets, b) {
+		Entity *dir = yeGet(b, 0);
+
+		yePrint(b);
+		ywCanvasMoveObjXY(yeGet(b, 1), yeGetFloatAt(dir, 0),
+				  yeGetFloatAt(dir, 1));
+	}
 	repose_cam(rw);
-	ywPosPrint(yeGet(rw_c, "cam"));
 	return (void *)ACTION;
 }
 
