@@ -81,19 +81,13 @@ void create_bullet(Entity *mouse_pos)
 	Entity *b = yeCreateArray(pc.bullets, NULL);
 	yeAutoFree Entity *cp_pos = ywPosCreate(pc.x, pc.y, NULL, NULL);
 
+	ywPosSub(cp_pos, yeGet(rw_c, "cam"));
 	Entity *bc = ywCanvasNewRectangle(rw_c, pc.x, pc.y, 5,  5,
 					  "rgba: 255 100 20 200");
 	yeAutoFree Entity *seg = ywSegmentFromPos(cp_pos, mouse_pos, NULL, NULL);
 	int dis = ywPosDistance(cp_pos, mouse_pos );
-	printf("VVVV\n");
-	ywPosPrint(mouse_pos);
-	ywPosPrint(cp_pos);
-	ywPosPrint(seg);
-	printf("%d: %f %f\n", dis, 1.0 * ywSizeW(seg) / dis,
-	       1.0 * ywSizeH(seg) / dis);
-	printf("^^^^^\n");
-
 	Entity *dir = yeCreateArray(b, "dir");
+
 	yeCreateFloat((1.0 * ywSizeW(seg) / dis) * 5, dir, "x");
 	yeCreateFloat((1.0 * ywSizeH(seg) / dis) * 5, dir, "y");
 	yePushBack(b, bc, NULL);
@@ -112,15 +106,12 @@ void *redwall_action(int nb, void **args)
 		mv_pix += floor(mv_acc);
 		mv_acc -= floor(mv_acc);
 	}
-	printf("ywidGetTurnTimer: %f %f %f\n", mv_pix, floor(mv_pix), mv_acc);
+	/* printf("ywidGetTurnTimer: %f %f %f\n", mv_pix, floor(mv_pix), mv_acc); */
 
 	yeveDirFromDirGrp(evs, yeGet(rw, "u_grp"), yeGet(rw, "d_grp"),
 			  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
 			  &ud, &lr, callbacks, NULL);
 
-	printf("%d %d\n",
-	       yeGetIntAt(rw_c, "tiled-wpix"),
-	       yeGetIntAt(rw_c, "tiled-hpix"));
 	int ox = pc.x, oy = pc.y;
 	pc.x += mv_pix * lr;
 	if (pc.x + pc.w > yeGetIntAt(rw_c, "tiled-wpix")) {
@@ -137,7 +128,6 @@ void *redwall_action(int nb, void **args)
 
 	int btn = 0;
 	if (yevMouseDown(evs, &btn)) {
-		printf("mouse down\n");
 		create_bullet(yevMousePos(evs));
 	}
 
@@ -161,7 +151,6 @@ void *redwall_action(int nb, void **args)
 	YE_FOREACH(pc.bullets, b) {
 		Entity *dir = yeGet(b, 0);
 
-		yePrint(b);
 		ywCanvasMoveObjXY(yeGet(b, 1), yeGetFloatAt(dir, 0),
 				  yeGetFloatAt(dir, 1));
 	}
@@ -213,8 +202,6 @@ void *redwall_init(int nb, void **args)
 
 	void *rr = yesCall(ygGet("tiled.fileToCanvas"),
 			   "./pere-lachaise.json", rw_c, rw_uc, 1);
-
-	printf("rr: %p - %d - %d\n", rr, ww, wh);
 
 	yeAutoFree Entity *pcs = yeCreateArray(NULL, NULL);
 
