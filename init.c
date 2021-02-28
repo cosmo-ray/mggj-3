@@ -88,9 +88,11 @@ void create_bullet(Entity *mouse_pos)
 	int dis = ywPosDistance(cp_pos, mouse_pos );
 	Entity *dir = yeCreateArray(b, "dir");
 
-	yeCreateFloat((1.0 * ywSizeW(seg) / dis) * 5, dir, "x");
-	yeCreateFloat((1.0 * ywSizeH(seg) / dis) * 5, dir, "y");
+	yeCreateFloat((1.0 * ywSizeW(seg) / dis), dir, "x");
+	yeCreateFloat((1.0 * ywSizeH(seg) / dis), dir, "y");
 	yePushBack(b, bc, NULL);
+	yeCreateInt(120, b, "life");
+	yeCreateInt(3, b, "px_per_ms");
 }
 
 void *redwall_action(int nb, void **args)
@@ -150,9 +152,14 @@ void *redwall_action(int nb, void **args)
 	/* move bulets */
 	YE_FOREACH(pc.bullets, b) {
 		Entity *dir = yeGet(b, 0);
+		Entity *life = yeGet(b, 2);
+		int px_per_ms = yeGetIntAt(b, 3);
 
-		ywCanvasMoveObjXY(yeGet(b, 1), yeGetFloatAt(dir, 0),
-				  yeGetFloatAt(dir, 1));
+		ywCanvasMoveObjXY(yeGet(b, 1),
+				  px_per_ms * yeGetFloatAt(dir, 0) *
+				  ywidGetTurnTimer() / (double)10000,
+				  px_per_ms * yeGetFloatAt(dir, 1) *
+				  ywidGetTurnTimer() / (double)10000);
 	}
 	repose_cam(rw);
 	return (void *)ACTION;
