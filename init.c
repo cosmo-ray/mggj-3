@@ -21,11 +21,12 @@ struct {
 
 Entity *rw_c;
 Entity *rw_uc;
+Entity *enemies;
 
 static void repose_enemies(void)
 {
-	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
-		struct unit *enemy = &enemies[i];
+	YE_FOREACH(enemies, enemy_ent) {
+		struct unit *enemy = yeGetData(enemy_ent);
 		yeAutoFree Entity *pos = ywPosCreate(enemy->x, enemy->y,
 						     NULL, NULL);
 
@@ -205,9 +206,12 @@ void *redwall_init(int nb, void **args)
 		rw.r_grp = right_grp;
 	}
 
+	enemies = yeCreateArray(rw, "enemies");
+
 	rw_c = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
 	yeCreateInt(2, rw_c, "mergable");
 	ywSizeCreate(2048, 2048, rw_c, "merge_surface_size");
+	yeCreateArray(rw_c, "objects");
 	rw_uc = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
 	ywPosCreateInts(0, 0, rw_c, "cam");
 	ywPosCreateInts(0, 0, rw_uc, "cam");
@@ -231,11 +235,32 @@ void *redwall_init(int nb, void **args)
 	pc.s = yesCall(ygGet("sprite-man.createHandler"), pcs, rw_c);
 	pc.bullets = yeCreateArray(NULL, NULL);
 
-	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
-		struct unit *enemy = &enemies[i];
+	Entity *objects = yeGet(rw_c, "objects");
+	YE_FOREACH (objects, o) {
 		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
 		Entity *sprite = yeCreateArray(s, "sprite");
+		const char *name = yeGetStringAt(o, "name");
+		struct type *t = NULL;
+		Entity *rect = yeGet(o, "rect");
 
+		if (!name)
+			continue;
+		for (int i = 0;
+		     i < sizeof(enemies_types) / sizeof(enemies_types[0]); ++i) {
+			if (!strcmp(enemies_types[i].name, name)) {
+				t = enemies_types[i].t;
+				break;
+			}
+		}
+
+		if (!t) {
+			continue;
+		}
+		struct unit *enemy = malloc(sizeof *enemy);
+
+		enemy->t = t;
+		enemy->x = ywRectX(rect);
+		enemy->y = ywRectY(rect);
 		yeCreateString(enemy->t->spath, sprite, "path");
 		yeCreateInt(enemy->t->sprite_len, sprite, "length");
 		yeCreateInt(enemy->t->h, sprite, "size");
@@ -243,6 +268,8 @@ void *redwall_init(int nb, void **args)
 		yeCreateString(enemy->t->spath, sprite, "path");
 
 		enemy->s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
+
+		yeSetFreeAdDestroy(yeCreateData(enemy, enemies, NULL));
 	}
 
 	old_tl = ywGetTurnLengthOverwrite();

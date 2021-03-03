@@ -16,10 +16,9 @@ struct unit {
 
 struct type rat = {"rat.png", 32, 32, 3, 1};
 
-struct unit enemies[] = {
-	{&rat, 20, 40},
-	{&rat, 200, 40},
-	{&rat, 20, 400},
-	{&rat, 500, 40},
-	{&rat, 300, 430},
+struct {
+	struct type *t;
+	char *name;
+} enemies_types[] = {
+	{ &rat, "rat" }
 };
