@@ -29,7 +29,6 @@ static void repose_enemies(void)
 						     NULL, NULL);
 
 		yesCall(ygGet("sprite-man.handlerSetPos"), enemies[i].s, pos);
-
 	}
 }
 
@@ -91,7 +90,7 @@ void create_bullet(Entity *mouse_pos)
 	yeCreateFloat((1.0 * ywSizeW(seg) / dis), dir, "x");
 	yeCreateFloat((1.0 * ywSizeH(seg) / dis), dir, "y");
 	yePushBack(b, bc, NULL);
-	yeCreateInt(120, b, "life");
+	yeCreateFloat(420, b, "life");
 	yeCreateInt(3, b, "px_per_ms");
 }
 
@@ -153,13 +152,21 @@ void *redwall_action(int nb, void **args)
 	YE_FOREACH(pc.bullets, b) {
 		Entity *dir = yeGet(b, 0);
 		Entity *life = yeGet(b, 2);
-		int px_per_ms = yeGetIntAt(b, 3);
 
-		ywCanvasMoveObjXY(yeGet(b, 1),
-				  px_per_ms * yeGetFloatAt(dir, 0) *
-				  ywidGetTurnTimer() / (double)10000,
-				  px_per_ms * yeGetFloatAt(dir, 1) *
-				  ywidGetTurnTimer() / (double)10000);
+		if (yeGetFloat(life) < 0) {
+			ywCanvasRemoveObj(rw_c, yeGet(b, 1));
+			yeRemoveChild(pc.bullets, b);
+			continue;
+		}
+		double px_per_ms = yeGetIntAt(b, 3) / 2;
+		double advence_x = px_per_ms * yeGetFloatAt(dir, 0) *
+			ywidGetTurnTimer() / (double)10000;
+		double advence_y = px_per_ms * yeGetFloatAt(dir, 1) *
+			ywidGetTurnTimer() / (double)10000;
+
+		ywCanvasMoveObjXY(yeGet(b, 1), advence_x, advence_y);
+		yeSubFloat(life, yuiAbs(advence_y) +
+			   yuiAbs(advence_x));
 	}
 	repose_cam(rw);
 	return (void *)ACTION;
