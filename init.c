@@ -25,10 +25,11 @@ Entity *rw_uc;
 static void repose_enemies(void)
 {
 	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
-		yeAutoFree Entity *pos = ywPosCreate(enemies[i].x, enemies[i].y,
+		struct unit *enemy = &enemies[i];
+		yeAutoFree Entity *pos = ywPosCreate(enemy->x, enemy->y,
 						     NULL, NULL);
 
-		yesCall(ygGet("sprite-man.handlerSetPos"), enemies[i].s, pos);
+		yesCall(ygGet("sprite-man.handlerSetPos"), enemy->s, pos);
 	}
 }
 
@@ -231,16 +232,17 @@ void *redwall_init(int nb, void **args)
 	pc.bullets = yeCreateArray(NULL, NULL);
 
 	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i) {
+		struct unit *enemy = &enemies[i];
 		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
 		Entity *sprite = yeCreateArray(s, "sprite");
 
-		yeCreateString(enemies[i].t->spath, sprite, "path");
-		yeCreateInt(enemies[i].t->sprite_len, sprite, "length");
-		yeCreateInt(enemies[i].t->h, sprite, "size");
+		yeCreateString(enemy->t->spath, sprite, "path");
+		yeCreateInt(enemy->t->sprite_len, sprite, "length");
+		yeCreateInt(enemy->t->h, sprite, "size");
 		yeCreateInt(32, sprite, "src-pos");
-		yeCreateString(enemies[i].t->spath, sprite, "path");
+		yeCreateString(enemy->t->spath, sprite, "path");
 
-		enemies[i].s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
+		enemy->s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
 	}
 
 	old_tl = ywGetTurnLengthOverwrite();
