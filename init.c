@@ -93,7 +93,7 @@ void create_bullet(Entity *mouse_pos)
 	yeCreateFloat((1.0 * ywSizeH(seg) / dis), dir, "y");
 	yePushBack(b, bc, NULL);
 	yeCreateFloat(420, b, "life");
-	yeCreateInt(3, b, "px_per_ms");
+	yeCreateInt(6, b, "px_per_ms");
 }
 
 void *redwall_action(int nb, void **args)
@@ -153,10 +153,18 @@ void *redwall_action(int nb, void **args)
 	/* move bulets */
 	YE_FOREACH(pc.bullets, b) {
 		Entity *dir = yeGet(b, 0);
+		Entity *obj = yeGet(b, 1);
 		Entity *life = yeGet(b, 2);
+		yeAutoFree Entity *cols = ywCanvasNewCollisionsArray(rw_c, obj);
 
+		YE_FOREACH(cols, c) {
+			if (yeGetIntAt(c, "Collision")) {
+				goto next;
+			}
+		}
 		if (yeGetFloat(life) < 0) {
-			ywCanvasRemoveObj(rw_c, yeGet(b, 1));
+		next:
+			ywCanvasRemoveObj(rw_c, obj);
 			yeRemoveChild(pc.bullets, b);
 			continue;
 		}
