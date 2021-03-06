@@ -1,0 +1,32 @@
+{
+    "name": "redwall",
+    "starting widget": "main",
+    "window size" : [1024, 600],
+    "main": {
+	"<type>": "menu",
+        "text-align": "center",
+	"entries" : [
+	    {
+		"text" : "New Game",
+		"next" : "redwall.story.begin",
+		"action" : "menuNext"
+	    }
+	],
+	"background" : "rgba: 255 255 255 255"
+    },
+    "game": {
+	"<type>": "redwall"
+    },
+    "init-scripts" : [
+	"init_redwall"
+    ],
+    "pre-load" : [
+	{ "path" : "YIRL_MODULES_PATH/tiled/", "type" : "module" },
+	{ "path" : "YIRL_MODULES_PATH/Universal-LPC-spritesheet/", "type" : "module" },
+	{ "path" : "YIRL_MODULES_PATH/sprite-manager/", "type" : "module" },
+	{ "file" : "story.json", "type" : "json", "as" : "story"},
+
+	{ "file" : "init.c", "type" : "tcc" }
+
+    ]
+}

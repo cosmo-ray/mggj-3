@@ -1,0 +1,12 @@
+{
+    "begin": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 255 255 255 255",
+	"text" : [
+	    "story time !!!!"
+	],
+	"next" : "redwall.game"
+    }
+}

@@ -29,8 +29,11 @@ static void repose_enemies(void)
 		struct unit *enemy = yeGetData(enemy_ent);
 		yeAutoFree Entity *pos = ywPosCreate(enemy->x, enemy->y,
 						     NULL, NULL);
+		Entity *cobj = yeGet(enemy->s, "canvas");
 
 		yesCall(ygGet("sprite-man.handlerSetPos"), enemy->s, pos);
+		if (!yeGet(cobj, "enemy"))
+			yePushBack(cobj, enemy_ent, "enemy");
 	}
 }
 
@@ -86,7 +89,7 @@ void create_bullet(Entity *mouse_pos)
 	Entity *bc = ywCanvasNewRectangle(rw_c, pc.x, pc.y, 5,  5,
 					  "rgba: 255 100 20 200");
 	yeAutoFree Entity *seg = ywSegmentFromPos(cp_pos, mouse_pos, NULL, NULL);
-	int dis = ywPosDistance(cp_pos, mouse_pos );
+	int dis = ywPosDistance(cp_pos, mouse_pos);
 	Entity *dir = yeCreateArray(b, "dir");
 
 	yeCreateFloat((1.0 * ywSizeW(seg) / dis), dir, "x");
@@ -159,11 +162,18 @@ void *redwall_action(int nb, void **args)
 
 		YE_FOREACH(cols, c) {
 			if (yeGetIntAt(c, "Collision")) {
-				goto next;
+				goto remove;
+			}
+			/* yePrint(c); */
+			if (yeGet(c, "enemy")) {
+				Entity *enemy = yeGet(c, "enemy");
+				ywCanvasRemoveObj(rw_c, c);
+				yeRemoveChild(enemies, enemy);
+				goto remove;
 			}
 		}
 		if (yeGetFloat(life) < 0) {
-		next:
+		remove:
 			ywCanvasRemoveObj(rw_c, obj);
 			yeRemoveChild(pc.bullets, b);
 			continue;
@@ -177,6 +187,53 @@ void *redwall_action(int nb, void **args)
 		ywCanvasMoveObjXY(yeGet(b, 1), advence_x, advence_y);
 		yeSubFloat(life, yuiAbs(advence_y) +
 			   yuiAbs(advence_x));
+	}
+
+	YE_FOREACH(enemies, e) {
+		struct unit *enemy = yeGetData(e);
+		Entity *cobj = yeGet(enemy->s, "canvas");
+
+		if (ywCanvasObjDistanceXY( cobj,
+			    pc.x, pc.y) < 300) {
+			int x = 0, y = 0, s;
+			int advance = 1 * ywidGetTurnTimer() / (double)10000;
+
+
+			if (ywCanvasObjDistanceXY(cobj,
+						  pc.x, pc.y) < 30) {
+				printf("YOU LOSE !!!\n");
+				ygTerminate();
+				return (void *)ACTION;
+
+			}
+			x = pc.x - enemy->x;
+			s = x;
+			x = yuiAbs(x) > advance ? advance : yuiAbs(x);
+			x = s < 0 ? -x : x;
+
+			y = pc.y - enemy->y;
+			s = y;
+			y = yuiAbs(y) > advance ? advance : yuiAbs(y);
+			y = s < 0 ? -y : y;
+			enemy->x += x;
+			enemy->y += y;
+			yeAutoFree Entity *rect =
+				ywRectReCreateInts(enemy->x, enemy->y,
+						   enemy->t->w,
+						   enemy->t->h,
+						   NULL, NULL);
+			yeAutoFree Entity *col =
+				ywCanvasNewCollisionsArrayWithRectangle(rw_c,
+									rect);
+			YE_FOREACH(col, c) {
+				if (yeGetIntAt(c, "Collision")) {
+					enemy->x -= x;
+					enemy->y -= y;
+					break;
+				}
+			}
+
+		}
 	}
 	repose_cam(rw);
 	return (void *)ACTION;
@@ -197,10 +254,10 @@ void *redwall_init(int nb, void **args)
 
 	yesCall(ygGet("tiled.setAssetPath"), "./");
 
-	down_grp = yevCreateGrp(0, Y_DOWN_KEY);
-	up_grp = yevCreateGrp(0, Y_UP_KEY);
-	left_grp = yevCreateGrp(0, Y_LEFT_KEY);
-	right_grp = yevCreateGrp(0, Y_RIGHT_KEY);
+	down_grp = yevCreateGrp(0, Y_DOWN_KEY, 's');
+	up_grp = yevCreateGrp(0, Y_UP_KEY, 'w');
+	left_grp = yevCreateGrp(0, Y_LEFT_KEY, 'a');
+	right_grp = yevCreateGrp(0, Y_RIGHT_KEY, 'd');
 
 	YEntityBlock {
 		rw.entries = {};
