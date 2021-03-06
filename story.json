@@ -8,5 +8,15 @@
 	    "story time !!!!"
 	],
 	"next" : "redwall.game"
+    },
+    "die": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 255 255 255 255",
+	"text" : [
+	    "YOU LOSE !"
+	],
+	"next" : "redwall.main"
     }
 }

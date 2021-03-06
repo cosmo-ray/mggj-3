@@ -201,10 +201,14 @@ void *redwall_action(int nb, void **args)
 
 			if (ywCanvasObjDistanceXY(cobj,
 						  pc.x, pc.y) < 30) {
-				printf("YOU LOSE !!!\n");
-				ygTerminate();
-				return (void *)ACTION;
+				Entity *die_fnc = ygGet(yeGetStringAt(rw, "die"));
 
+				if (die_fnc) {
+					yesCall(die_fnc, rw);
+				} else {
+					ygTerminate();
+				}
+				return (void *)ACTION;
 			}
 			x = pc.x - enemy->x;
 			s = x;
@@ -244,6 +248,8 @@ void* redwall_destroy(int nb, void **args)
 	ywSetTurnLengthOverwrite(old_tl);
 	yeDestroy(pc.s);
 	yeDestroy(pc.bullets);
+	yeDestroy(enemies);
+	enemies = NULL;
 	return NULL;
 }
 

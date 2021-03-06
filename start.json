@@ -10,12 +10,19 @@
 		"text" : "New Game",
 		"next" : "redwall.story.begin",
 		"action" : "menuNext"
+	    },
+	    {
+		"text" : "Quit",
+		"action" : "FinishGame"
 	    }
+
 	],
 	"background" : "rgba: 255 255 255 255"
     },
     "game": {
-	"<type>": "redwall"
+	"<type>": "redwall",
+	"die" : "callNextLose",
+	"next-lose": "redwall.story.die"
     },
     "init-scripts" : [
 	"init_redwall"
