@@ -107,7 +107,9 @@ void *redwall_action(int nb, void **args)
 	static int lr = 0, ud = 0;
 	static double mv_acc;
 	double mv_pix = 2 * ywidGetTurnTimer() / (double)10000;
+	static int time_acc;
 
+	time_acc += ywidGetTurnTimer();
 	mv_acc += mv_pix - floor(mv_pix);
 	if (mv_acc > 1) {
 		mv_pix += floor(mv_acc);
@@ -151,8 +153,10 @@ void *redwall_action(int nb, void **args)
 		}
 	}
 
-	if (lr || ud)
+	if ((lr || ud) && time_acc > 100000) {
 		yesCall(ygGet("sprite-man.handlerAdvance"), pc.s);
+		time_acc = 0;
+	}
 
 	/* move bulets */
 	YE_FOREACH(pc.bullets, b) {
@@ -204,6 +208,9 @@ void *redwall_action(int nb, void **args)
 						  pc.x, pc.y) < 30) {
 				Entity *die_fnc = ygGet(yeGetStringAt(rw, "die"));
 
+				lr = 0;
+				ud = 0;
+				mv_acc = 0;
 				if (die_fnc) {
 					yesCall(die_fnc, rw);
 				} else {
