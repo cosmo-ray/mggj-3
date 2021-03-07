@@ -14,7 +14,7 @@ struct unit {
 	Entity *s;
 };
 
-struct type rat = {"rat.png", 32, 32, 3, 1};
+struct type rat = {"enemy_placeholder.png", 24, 24, 6, 1};
 
 struct {
 	struct type *t;

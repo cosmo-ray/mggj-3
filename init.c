@@ -353,7 +353,7 @@ void *redwall_init(int nb, void **args)
 		yeCreateString(enemy->t->spath, sprite, "path");
 		yeCreateInt(enemy->t->sprite_len, sprite, "length");
 		yeCreateInt(enemy->t->h, sprite, "size");
-		yeCreateInt(32, sprite, "src-pos");
+		yeCreateInt(0, sprite, "src-pos");
 		yeCreateString(enemy->t->spath, sprite, "path");
 
 		enemy->s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
