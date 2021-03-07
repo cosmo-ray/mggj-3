@@ -22,6 +22,7 @@ struct {
 Entity *rw_c;
 Entity *rw_uc;
 Entity *enemies;
+Entity *entries;
 
 static void repose_enemies(void)
 {
@@ -250,6 +251,8 @@ void* redwall_destroy(int nb, void **args)
 	yeDestroy(pc.bullets);
 	yeDestroy(enemies);
 	enemies = NULL;
+	yeDestroy(entries);
+	entries = NULL;
 	return NULL;
 }
 
@@ -278,6 +281,7 @@ void *redwall_init(int nb, void **args)
 	}
 
 	enemies = yeCreateArray(rw, "enemies");
+	entries = yeCreateArray(rw, "entries");
 
 	rw_c = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
 	yeCreateInt(2, rw_c, "mergable");
@@ -308,12 +312,19 @@ void *redwall_init(int nb, void **args)
 
 	Entity *objects = yeGet(rw_c, "objects");
 	YE_FOREACH (objects, o) {
-		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
-		Entity *sprite = yeCreateArray(s, "sprite");
-		const char *name = yeGetStringAt(o, "name");
+		const char *layer_name = yeGetStringAt(o, "layer_name");
 		struct type *t = NULL;
 		Entity *rect = yeGet(o, "rect");
+		const char *name = yeGetStringAt(o, "name");
 
+		if (!strcmp(layer_name, "Entries")) {
+			printf("push entry: %s\n", name);
+			yePushBack(entries, rect, name);
+			continue;
+		}
+
+		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
+		Entity *sprite = yeCreateArray(s, "sprite");
 		if (!name)
 			continue;
 		for (int i = 0;
@@ -343,6 +354,11 @@ void *redwall_init(int nb, void **args)
 		yeSetFreeAdDestroy(yeCreateData(enemy, enemies, NULL));
 	}
 
+	Entity *in = yeGet(entries, yeGetStringAt(rw, "in"));
+	if (in) {
+		pc.y = ywRectY(in);
+		pc.x = ywRectX(in);
+	}
 	old_tl = ywGetTurnLengthOverwrite();
 	ywSetTurnLengthOverwrite(-1);
 	return ret;

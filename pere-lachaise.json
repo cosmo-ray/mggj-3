@@ -274,7 +274,30 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":7,
+         "name":"Entries",
+         "objects":[
+                {
+                 "height":0,
+                 "id":19,
+                 "name":"wall_start",
+                 "point":true,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1476.02339181287,
+                 "y":1402.33918128655
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -296,8 +319,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":7,
- "nextobjectid":19,
+ "nextlayerid":8,
+ "nextobjectid":20,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.4.2",

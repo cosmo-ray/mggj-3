@@ -22,7 +22,8 @@
     "game": {
 	"<type>": "redwall",
 	"die" : "callNextLose",
-	"next-lose": "redwall.story.die"
+	"next-lose": "redwall.story.die",
+	"in": "wall_start"
     },
     "init-scripts" : [
 	"init_redwall"
