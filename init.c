@@ -143,6 +143,19 @@ void *redwall_action(int nb, void **args)
 	if (yevMouseDown(evs, &btn)) {
 		create_bullet(yevMousePos(evs));
 	}
+	int flr = yevIsGrpDown(evs, yeGet(rw, "r_fire_grp")) ? 1 :
+		(yevIsGrpDown(evs, yeGet(rw, "l_fire_grp")) ? -1 : 0);
+	int fud = yevIsGrpDown(evs, yeGet(rw, "d_fire_grp")) ? 1 :
+		(yevIsGrpDown(evs, yeGet(rw, "u_fire_grp")) ? -1 : 0);
+
+	if (flr || fud) {
+		yeAutoFree Entity *p =
+			ywPosCreate(pc.x + flr,
+				    pc.y + fud, NULL, NULL);
+		ywPosSub(p, yeGet(rw_c, "cam"));
+		yePrint(p);
+		create_bullet(p);
+	}
 
 	Entity *pc_rect = ywRectReCreateInts(pc.x + 6, pc.y, 10,
 					     pc.h, NULL, NULL);
@@ -288,13 +301,20 @@ void *redwall_init(int nb, void **args)
 {
 	Entity *rw = args[0];
 	yeAutoFree Entity *down_grp, *up_grp, *left_grp, *right_grp;
+	yeAutoFree Entity *down_fire_grp, *up_fire_grp,
+		*left_fire_grp, *right_fire_grp;
 
 	yesCall(ygGet("tiled.setAssetPath"), "./");
 
-	down_grp = yevCreateGrp(0, Y_DOWN_KEY, 's');
-	up_grp = yevCreateGrp(0, Y_UP_KEY, 'w');
-	left_grp = yevCreateGrp(0, Y_LEFT_KEY, 'a');
-	right_grp = yevCreateGrp(0, Y_RIGHT_KEY, 'd');
+	down_grp = yevCreateGrp(0, 's');
+	up_grp = yevCreateGrp(0, 'z', 'w');
+	left_grp = yevCreateGrp(0, 'a');
+	right_grp = yevCreateGrp(0, 'd');
+
+	down_fire_grp = yevCreateGrp(0, Y_DOWN_KEY);
+	up_fire_grp = yevCreateGrp(0, Y_UP_KEY);
+	left_fire_grp = yevCreateGrp(0, Y_LEFT_KEY);
+	right_fire_grp = yevCreateGrp(0, Y_RIGHT_KEY);
 
 	YEntityBlock {
 		rw.entries = {};
@@ -306,6 +326,10 @@ void *redwall_init(int nb, void **args)
 		rw.d_grp = down_grp;
 		rw.l_grp = left_grp;
 		rw.r_grp = right_grp;
+		rw.u_fire_grp = up_fire_grp;
+		rw.d_fire_grp = down_fire_grp;
+		rw.l_fire_grp = left_fire_grp;
+		rw.r_fire_grp = right_fire_grp;
 	}
 
 	enemies = yeCreateArray(rw, "enemies");
