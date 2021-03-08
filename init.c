@@ -155,7 +155,6 @@ void *redwall_action(int nb, void **args)
 
 	if ((lr || ud) && time_acc > 100000) {
 		yesCall(ygGet("sprite-man.handlerAdvance"), pc.s);
-		time_acc = 0;
 	}
 
 	/* move bulets */
@@ -237,16 +236,36 @@ void *redwall_action(int nb, void **args)
 			yeAutoFree Entity *col =
 				ywCanvasNewCollisionsArrayWithRectangle(rw_c,
 									rect);
+
+			if (x < 0) {
+				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 72);
+			} else if (x > 0) {
+				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 48);
+			} else if (y < 0) {
+				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 24);
+			} else if (y > 0) {
+				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 0);
+			}
 			YE_FOREACH(col, c) {
 				if (yeGetIntAt(c, "Collision")) {
 					enemy->x -= x;
 					enemy->y -= y;
-					break;
+					goto continue_loop;
 				}
 			}
+			if (time_acc > 100000) {
+				yesCall(ygGet("sprite-man.handlerAdvance"),
+					enemy->s);
+				yesCall(ygGet("sprite-man.handlerRefresh"),
+					enemy->s);
+			}
+
+		continue_loop:
 
 		}
 	}
+	if (time_acc > 100000)
+		time_acc = 0;
 	repose_cam(rw);
 	return (void *)ACTION;
 }
