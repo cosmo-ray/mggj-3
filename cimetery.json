@@ -1,0 +1,14 @@
+{ "columns":86,
+ "image":"tileset_placeholder\/tileset_placeholder.png",
+ "imageheight":3072,
+ "imagewidth":2064,
+ "margin":0,
+ "name":"cimetery",
+ "spacing":0,
+ "tilecount":11008,
+ "tiledversion":"1.4.2",
+ "tileheight":24,
+ "tilewidth":24,
+ "type":"tileset",
+ "version":1.4
+}
