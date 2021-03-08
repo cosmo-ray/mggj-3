@@ -24,6 +24,10 @@ Entity *rw_uc;
 Entity *enemies;
 Entity *entries;
 
+Entity *sprite_man_handlerSetPos;
+Entity *sprite_man_handlerAdvance;
+Entity *sprite_man_handlerRefresh;
+
 static void repose_enemies(void)
 {
 	YE_FOREACH(enemies, enemy_ent) {
@@ -32,7 +36,7 @@ static void repose_enemies(void)
 						     NULL, NULL);
 		Entity *cobj = yeGet(enemy->s, "canvas");
 
-		yesCall(ygGet("sprite-man.handlerSetPos"), enemy->s, pos);
+		yesCall(sprite_man_handlerSetPos, enemy->s, pos);
 		if (!yeGet(cobj, "enemy"))
 			yePushBack(cobj, enemy_ent, "enemy");
 	}
@@ -53,8 +57,8 @@ static void repose_cam(Entity *rw)
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
 	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
 					     NULL, NULL);
-	yesCall(ygGet("sprite-man.handlerSetPos"), pc.s, pos);
-	yesCall(ygGet("sprite-man.handlerRefresh"), pc.s);
+	yesCall(sprite_man_handlerSetPos, pc.s, pos);
+	yesCall(sprite_man_handlerRefresh, pc.s);
 
 	repose_enemies();
 }
@@ -154,7 +158,7 @@ void *redwall_action(int nb, void **args)
 	}
 
 	if ((lr || ud) && time_acc > 100000) {
-		yesCall(ygGet("sprite-man.handlerAdvance"), pc.s);
+		yesCall(sprite_man_handlerAdvance, pc.s);
 	}
 
 	/* move bulets */
@@ -254,10 +258,8 @@ void *redwall_action(int nb, void **args)
 				}
 			}
 			if (time_acc > 100000) {
-				yesCall(ygGet("sprite-man.handlerAdvance"),
-					enemy->s);
-				yesCall(ygGet("sprite-man.handlerRefresh"),
-					enemy->s);
+				yesCall(sprite_man_handlerAdvance, enemy->s);
+				yesCall(sprite_man_handlerRefresh, enemy->s);
 			}
 
 		continue_loop:
@@ -308,6 +310,9 @@ void *redwall_init(int nb, void **args)
 
 	enemies = yeCreateArray(rw, "enemies");
 	entries = yeCreateArray(rw, "entries");
+	sprite_man_handlerSetPos = ygGet("sprite-man.handlerSetPos");
+	sprite_man_handlerAdvance = ygGet("sprite-man.handlerAdvance");
+	sprite_man_handlerRefresh = ygGet("sprite-man.handlerRefresh");
 
 	rw_c = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
 	yeCreateInt(2, rw_c, "mergable");
