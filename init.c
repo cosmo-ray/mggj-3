@@ -42,6 +42,28 @@ Entity *sprite_man_handlerSetPos;
 Entity *sprite_man_handlerAdvance;
 Entity *sprite_man_handlerRefresh;
 
+static int sprit_flag_pos(void)
+{
+	int i = yeGetIntAt(yeGet(pc.s, "sp"), "src-pos");
+
+	if (i == 0)
+		return PJ_DOWN;
+	else if (i == 24)
+		return PJ_UP;
+	else if (i == 48)
+		return PJ_RIGHT;
+	else if (i == 72)
+		return PJ_LEFT;
+	i = yeGetIntAt(pc.s, "x");
+	if (i == 0)
+		return PJ_LEFT;
+	else if (i == 24)
+		return PJ_DOWN;
+	else if (i == 48)
+		return PJ_RIGHT;
+	return PJ_UP;
+}
+
 static void repose_enemies(void)
 {
 	YE_FOREACH(enemies, enemy_ent) {
@@ -75,23 +97,29 @@ static void repose_cam(Entity *rw)
 	yesCall(sprite_man_handlerRefresh, pc.s);
 
 	Entity *e = pc.weapon->e;
+	if (!pc.dir0_flag) {
+		switch (sprit_flag_pos()) {
+		case PJ_DOWN:
+			yeSetAt(pc.s, "x", 24);
+			break;
+		case PJ_LEFT:
+			yeSetAt(pc.s, "x", 0);
+			break;
+		case PJ_UP:
+			yeSetAt(pc.s, "x", 72);
+			break;
+		case PJ_RIGHT:
+			yeSetAt(pc.s, "x", 48);
+			break;
+		}
+		yeSetAt(yeGet(pc.s, "sp"), "src-pos", 96);
+		printf("%d - %d\n", yeGetIntAt(yeGet(pc.s, "sp"), "src-pos"),
+		       yeGetIntAt(pc.s, "x"));
+	}
 	yesCall(sprite_man_handlerSetPos, e, pos);
 	yesCall(sprite_man_handlerRefresh, e);
 
 	repose_enemies();
-}
-
-int sprit_flag_pos(void)
-{
-	int i = yeGetIntAt(yeGet(pc.s, "sp"), "src-pos");
-
-	if (i == 0)
-		return PJ_DOWN;
-	else if (i == 24)
-		return PJ_UP;
-	else if (i == 48)
-		return PJ_LEFT;
-	return PJ_RIGHT;
 }
 
 static void img_down(Entity *arg)
@@ -245,7 +273,7 @@ void *redwall_action(int nb, void **args)
 		}
 	}
 
-	if ((lr || ud) && time_acc > 100000) {
+	if ((lr || ud) && time_acc > 100000 && pc.dir0_flag) {
 		yesCall(sprite_man_handlerAdvance, pc.s);
 	}
 
