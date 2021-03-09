@@ -15,16 +15,23 @@ void *ylpcsCreateHandler(void *character, void *canvas,
 #define PJ_RIGHT 4
 #define PJ_UP 8
 
+struct weapon {
+	Entity *e;
+};
+
+struct weapon chassepot = {NULL};
+
 struct {
 	int x;
 	int y;
 	int w;
 	int h;
 	Entity *s;
+	struct weapon *weapon;
 	Entity *bullets;
 	int8_t dir0_flag;
 	int8_t dir_flag;
-} pc = {530, 460, 24, 24, NULL, NULL, 0, PJ_DOWN};
+} pc = {530, 460, 24, 24, NULL, &chassepot, NULL, 0, PJ_DOWN};
 
 Entity *rw_c;
 Entity *rw_uc;
@@ -66,6 +73,10 @@ static void repose_cam(Entity *rw)
 					     NULL, NULL);
 	yesCall(sprite_man_handlerSetPos, pc.s, pos);
 	yesCall(sprite_man_handlerRefresh, pc.s);
+
+	Entity *e = pc.weapon->e;
+	yesCall(sprite_man_handlerSetPos, e, pos);
+	yesCall(sprite_man_handlerRefresh, e);
 
 	repose_enemies();
 }
@@ -354,6 +365,7 @@ void* redwall_destroy(int nb, void **args)
 	ywSetTurnLengthOverwrite(old_tl);
 	yeDestroy(pc.s);
 	yeDestroy(pc.bullets);
+	yeDestroy(chassepot.e);
 	yeDestroy(enemies);
 	enemies = NULL;
 	yeDestroy(entries);
@@ -420,6 +432,20 @@ void *redwall_init(int nb, void **args)
 	}
 	pc.s = yesCall(ygGet("sprite-man.createHandler"), pcs, rw_c);
 	pc.bullets = yeCreateArray(NULL, NULL);
+
+	yeAutoFree Entity *chassepot_e = yeCreateArray(NULL, NULL);
+
+	YEntityBlock {
+		chassepot_e.sprite = {};
+		chassepot_e.sprite.path = "mc_placeholder.png";
+		chassepot_e.sprite.length = 4;
+		chassepot_e.sprite.size = 24;
+		chassepot_e.sprite["src-pos"] = 244;
+	}
+	chassepot.e = yesCall(ygGet("sprite-man.createHandler"),
+			      chassepot_e, rw_c);
+
+	pc.weapon = &chassepot;
 
 	Entity *objects = yeGet(rw_c, "objects");
 	YE_FOREACH (objects, o) {
