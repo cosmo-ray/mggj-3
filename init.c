@@ -93,29 +93,38 @@ static void repose_cam(Entity *rw)
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
 	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
 					     NULL, NULL);
-	yesCall(sprite_man_handlerSetPos, pc.s, pos);
-	yesCall(sprite_man_handlerRefresh, pc.s);
 
 	Entity *e = pc.weapon->e;
-	if (!pc.dir0_flag) {
-		switch (sprit_flag_pos()) {
-		case PJ_DOWN:
+	int gun_add_x = 0, gun_add_y = 4;
+	switch (sprit_flag_pos()) {
+	case PJ_DOWN:
+		if (!pc.dir0_flag)
 			yeSetAt(pc.s, "x", 24);
-			break;
-		case PJ_LEFT:
+		yeSetAt(e, "x", 72);
+		gun_add_x = -6;
+		break;
+	case PJ_LEFT:
+		if (!pc.dir0_flag)
 			yeSetAt(pc.s, "x", 0);
-			break;
-		case PJ_UP:
+		yeSetAt(e, "x", 0);
+		break;
+	case PJ_UP:
+		if (!pc.dir0_flag)
 			yeSetAt(pc.s, "x", 72);
-			break;
-		case PJ_RIGHT:
+		yeSetAt(e, "x", 48);
+		gun_add_x = 6;
+		break;
+	case PJ_RIGHT:
+		if (!pc.dir0_flag)
 			yeSetAt(pc.s, "x", 48);
-			break;
-		}
-		yeSetAt(yeGet(pc.s, "sp"), "src-pos", 96);
-		printf("%d - %d\n", yeGetIntAt(yeGet(pc.s, "sp"), "src-pos"),
-		       yeGetIntAt(pc.s, "x"));
+		yeSetAt(e, "x", 24);
+		break;
 	}
+	if (!pc.dir0_flag)
+		yeSetAt(yeGet(pc.s, "sp"), "src-pos", 96);
+	yesCall(sprite_man_handlerSetPos, pc.s, pos);
+	yesCall(sprite_man_handlerRefresh, pc.s);
+	ywPosAddXY(pos, gun_add_x, gun_add_y);
 	yesCall(sprite_man_handlerSetPos, e, pos);
 	yesCall(sprite_man_handlerRefresh, e);
 
@@ -195,10 +204,21 @@ static void callback(Entity *a, int k, int is_up)
 void create_bullet(Entity *mouse_pos)
 {
 	Entity *b = yeCreateArray(pc.bullets, NULL);
+	int xadd = 0, yadd = 11;
+
+	switch (sprit_flag_pos()) {
+	case PJ_UP:
+		xadd = 20;
+		break;
+	case PJ_RIGHT:
+		xadd = 15;
+		break;
+	}
+
 	yeAutoFree Entity *cp_pos = ywPosCreate(pc.x, pc.y, NULL, NULL);
 
 	ywPosSub(cp_pos, yeGet(rw_c, "cam"));
-	Entity *bc = ywCanvasNewRectangle(rw_c, pc.x, pc.y, 5,  5,
+	Entity *bc = ywCanvasNewRectangle(rw_c, pc.x + xadd, pc.y + yadd, 5,  5,
 					  "rgba: 255 100 20 200");
 	yeAutoFree Entity *seg = ywSegmentFromPos(cp_pos, mouse_pos, NULL, NULL);
 	int dis = ywPosDistance(cp_pos, mouse_pos);
@@ -468,7 +488,7 @@ void *redwall_init(int nb, void **args)
 		chassepot_e.sprite.path = "mc_placeholder.png";
 		chassepot_e.sprite.length = 4;
 		chassepot_e.sprite.size = 24;
-		chassepot_e.sprite["src-pos"] = 244;
+		chassepot_e.sprite["src-pos"] = 240;
 	}
 	chassepot.e = yesCall(ygGet("sprite-man.createHandler"),
 			      chassepot_e, rw_c);
