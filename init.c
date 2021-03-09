@@ -10,6 +10,11 @@ void *ylpcsCreateHandler(void *character, void *canvas,
 
 #include "enemies.h"
 
+#define PJ_DOWN 1
+#define PJ_LEFT 2
+#define PJ_RIGHT 4
+#define PJ_UP 8
+
 struct {
 	int x;
 	int y;
@@ -17,7 +22,9 @@ struct {
 	int h;
 	Entity *s;
 	Entity *bullets;
-} pc = {530, 460, 24, 24, NULL};
+	int8_t dir0_flag;
+	int8_t dir_flag;
+} pc = {530, 460, 24, 24, NULL, NULL, 0, PJ_DOWN};
 
 Entity *rw_c;
 Entity *rw_uc;
@@ -63,27 +70,88 @@ static void repose_cam(Entity *rw)
 	repose_enemies();
 }
 
+int sprit_flag_pos(void)
+{
+	int i = yeGetIntAt(yeGet(pc.s, "sp"), "src-pos");
+
+	if (i == 0)
+		return PJ_DOWN;
+	else if (i == 24)
+		return PJ_UP;
+	else if (i == 48)
+		return PJ_LEFT;
+	return PJ_RIGHT;
+}
+
 static void img_down(Entity *arg)
 {
+	pc.dir0_flag = (pc.dir0_flag | PJ_DOWN) & ~PJ_UP;
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 0);
 }
 
 static void img_up(Entity *arg)
 {
+	pc.dir0_flag = (pc.dir0_flag | PJ_UP) & ~PJ_DOWN;
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 24);
 }
 
 static void img_right(Entity *arg)
 {
+	pc.dir0_flag = (pc.dir0_flag | PJ_RIGHT) & ~PJ_LEFT;
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 48);
 }
 
 static void img_left(Entity *arg)
 {
+	pc.dir0_flag = (pc.dir0_flag | PJ_LEFT) & ~PJ_RIGHT;
 	yeSetAt(yeGet(pc.s, "sp"), "src-pos", 72);
 }
 
-static void (*callbacks[4])(Entity *) = {img_up, img_down, img_right, img_left};
+
+static void callback(Entity *a, int k, int is_up)
+{
+	switch (k) {
+	case Y_UP_KEY:
+		if (!is_up)
+			img_up(a);
+		else
+			pc.dir0_flag &= ~PJ_UP;
+		break;
+	case Y_DOWN_KEY:
+		if (!is_up)
+			img_down(a);
+		else
+			pc.dir0_flag &= ~PJ_DOWN;
+		break;
+	case Y_LEFT_KEY:
+		if (!is_up)
+			img_left(a);
+		else
+			pc.dir0_flag &= ~PJ_LEFT;
+		break;
+	case Y_RIGHT_KEY:
+		if (!is_up)
+			img_right(a);
+		else
+			pc.dir0_flag &= ~PJ_RIGHT;
+		break;
+	}
+	if ((pc.dir0_flag))
+		pc.dir_flag = pc.dir0_flag;
+	if (!(sprit_flag_pos() & pc.dir_flag)) {
+		int f = pc.dir_flag;
+		int pix_dst = 0;
+
+		if (f & PJ_UP)
+			pix_dst = 24;
+		else if (f & PJ_LEFT)
+			pix_dst = 72;
+		else if (f & PJ_RIGHT)
+			pix_dst = 48;
+		yeSetAt(yeGet(pc.s, "sp"), "src-pos", pix_dst);
+	}
+	/* img_up, img_down, img_right, img_left */
+}
 
 void create_bullet(Entity *mouse_pos)
 {
@@ -123,7 +191,7 @@ void *redwall_action(int nb, void **args)
 
 	yeveDirFromDirGrp(evs, yeGet(rw, "u_grp"), yeGet(rw, "d_grp"),
 			  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
-			  &ud, &lr, callbacks, NULL);
+			  &ud, &lr, callback, NULL);
 
 	int ox = pc.x, oy = pc.y;
 	pc.x += mv_pix * lr;
@@ -139,19 +207,15 @@ void *redwall_action(int nb, void **args)
 		pc.y = 0;
 	}
 
-	int btn = 0;
-	if (yevMouseDown(evs, &btn)) {
-		create_bullet(yevMousePos(evs));
-	}
-	int flr = yevIsGrpDown(evs, yeGet(rw, "r_fire_grp")) ? 1 :
-		(yevIsGrpDown(evs, yeGet(rw, "l_fire_grp")) ? -1 : 0);
-	int fud = yevIsGrpDown(evs, yeGet(rw, "d_fire_grp")) ? 1 :
-		(yevIsGrpDown(evs, yeGet(rw, "u_fire_grp")) ? -1 : 0);
+	int fire = yevIsGrpDown(evs, yeGet(rw, "fire_grp"));
 
-	if (flr || fud) {
+	if (fire) {
+		int xadd = (pc.dir_flag & PJ_LEFT) ? -1 :
+			((pc.dir_flag & PJ_RIGHT) ? 1 : 0);
+		int yadd = (pc.dir_flag & PJ_DOWN) ? 1 :
+			((pc.dir_flag & PJ_UP) ? -1 : 0);
 		yeAutoFree Entity *p =
-			ywPosCreate(pc.x + flr,
-				    pc.y + fud, NULL, NULL);
+			ywPosCreate(pc.x + xadd, pc.y + yadd, NULL, NULL);
 		ywPosSub(p, yeGet(rw_c, "cam"));
 		yePrint(p);
 		create_bullet(p);
@@ -301,20 +365,15 @@ void *redwall_init(int nb, void **args)
 {
 	Entity *rw = args[0];
 	yeAutoFree Entity *down_grp, *up_grp, *left_grp, *right_grp;
-	yeAutoFree Entity *down_fire_grp, *up_fire_grp,
-		*left_fire_grp, *right_fire_grp;
+	yeAutoFree Entity *fire_grp;
 
 	yesCall(ygGet("tiled.setAssetPath"), "./");
 
-	down_grp = yevCreateGrp(0, 's');
-	up_grp = yevCreateGrp(0, 'z', 'w');
-	left_grp = yevCreateGrp(0, 'a');
-	right_grp = yevCreateGrp(0, 'd');
-
-	down_fire_grp = yevCreateGrp(0, Y_DOWN_KEY);
-	up_fire_grp = yevCreateGrp(0, Y_UP_KEY);
-	left_fire_grp = yevCreateGrp(0, Y_LEFT_KEY);
-	right_fire_grp = yevCreateGrp(0, Y_RIGHT_KEY);
+	down_grp = yevCreateGrp(0, 's', Y_DOWN_KEY);
+	up_grp = yevCreateGrp(0, 'w', Y_UP_KEY);
+	left_grp = yevCreateGrp(0, 'a', Y_LEFT_KEY);
+	right_grp = yevCreateGrp(0, 'd', Y_RIGHT_KEY);
+	fire_grp = yevCreateGrp(0, ' ');
 
 	YEntityBlock {
 		rw.entries = {};
@@ -326,10 +385,7 @@ void *redwall_init(int nb, void **args)
 		rw.d_grp = down_grp;
 		rw.l_grp = left_grp;
 		rw.r_grp = right_grp;
-		rw.u_fire_grp = up_fire_grp;
-		rw.d_fire_grp = down_fire_grp;
-		rw.l_fire_grp = left_fire_grp;
-		rw.r_fire_grp = right_fire_grp;
+		rw.fire_grp = fire_grp;
 	}
 
 	enemies = yeCreateArray(rw, "enemies");
