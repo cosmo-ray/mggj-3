@@ -42,6 +42,42 @@ Entity *sprite_man_handlerSetPos;
 Entity *sprite_man_handlerAdvance;
 Entity *sprite_man_handlerRefresh;
 
+static int sprit_flag_pos(void)
+{
+	int i = yeGetIntAt(yeGet(pc.s, "sp"), "src-pos");
+
+	if (i == 0)
+		return PJ_DOWN;
+	else if (i == 24)
+		return PJ_UP;
+	else if (i == 48)
+		return PJ_RIGHT;
+	else if (i == 72)
+		return PJ_LEFT;
+	i = yeGetIntAt(pc.s, "x");
+	if (i == 0)
+		return PJ_LEFT;
+	else if (i == 24)
+		return PJ_DOWN;
+	else if (i == 48)
+		return PJ_RIGHT;
+	return PJ_UP;
+}
+
+static void dead_refresh(void)
+{
+	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
+					     NULL, NULL);
+
+	yesCall(sprite_man_handlerSetPos, pc.s, pos);
+	yesCall(sprite_man_handlerRefresh, pc.s);
+	Entity *c = yeGet(pc.s, "canvas");
+	ywCanvasSwapObj(rw_c, c, ywCanvasLastObj(rw_c));
+	ywCanvasForceSizeXY(c, 240, 240);
+	ygUpdateScreen();
+	usleep(300000);
+}
+
 static void repose_enemies(void)
 {
 	YE_FOREACH(enemies, enemy_ent) {
@@ -71,27 +107,42 @@ static void repose_cam(Entity *rw)
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
 	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
 					     NULL, NULL);
-	yesCall(sprite_man_handlerSetPos, pc.s, pos);
-	yesCall(sprite_man_handlerRefresh, pc.s);
 
 	Entity *e = pc.weapon->e;
+	int gun_add_x = 0, gun_add_y = 4;
+	switch (sprit_flag_pos()) {
+	case PJ_DOWN:
+		if (!pc.dir0_flag)
+			yeSetAt(pc.s, "x", 24);
+		yeSetAt(e, "x", 72);
+		gun_add_x = -6;
+		break;
+	case PJ_LEFT:
+		if (!pc.dir0_flag)
+			yeSetAt(pc.s, "x", 0);
+		yeSetAt(e, "x", 0);
+		break;
+	case PJ_UP:
+		if (!pc.dir0_flag)
+			yeSetAt(pc.s, "x", 72);
+		yeSetAt(e, "x", 48);
+		gun_add_x = 6;
+		break;
+	case PJ_RIGHT:
+		if (!pc.dir0_flag)
+			yeSetAt(pc.s, "x", 48);
+		yeSetAt(e, "x", 24);
+		break;
+	}
+	if (!pc.dir0_flag)
+		yeSetAt(yeGet(pc.s, "sp"), "src-pos", 96);
+	yesCall(sprite_man_handlerSetPos, pc.s, pos);
+	yesCall(sprite_man_handlerRefresh, pc.s);
+	ywPosAddXY(pos, gun_add_x, gun_add_y);
 	yesCall(sprite_man_handlerSetPos, e, pos);
 	yesCall(sprite_man_handlerRefresh, e);
 
 	repose_enemies();
-}
-
-int sprit_flag_pos(void)
-{
-	int i = yeGetIntAt(yeGet(pc.s, "sp"), "src-pos");
-
-	if (i == 0)
-		return PJ_DOWN;
-	else if (i == 24)
-		return PJ_UP;
-	else if (i == 48)
-		return PJ_LEFT;
-	return PJ_RIGHT;
 }
 
 static void img_down(Entity *arg)
@@ -167,10 +218,21 @@ static void callback(Entity *a, int k, int is_up)
 void create_bullet(Entity *mouse_pos)
 {
 	Entity *b = yeCreateArray(pc.bullets, NULL);
+	int xadd = 0, yadd = 11;
+
+	switch (sprit_flag_pos()) {
+	case PJ_UP:
+		xadd = 20;
+		break;
+	case PJ_RIGHT:
+		xadd = 15;
+		break;
+	}
+
 	yeAutoFree Entity *cp_pos = ywPosCreate(pc.x, pc.y, NULL, NULL);
 
 	ywPosSub(cp_pos, yeGet(rw_c, "cam"));
-	Entity *bc = ywCanvasNewRectangle(rw_c, pc.x, pc.y, 5,  5,
+	Entity *bc = ywCanvasNewRectangle(rw_c, pc.x + xadd, pc.y + yadd, 5,  5,
 					  "rgba: 255 100 20 200");
 	yeAutoFree Entity *seg = ywSegmentFromPos(cp_pos, mouse_pos, NULL, NULL);
 	int dis = ywPosDistance(cp_pos, mouse_pos);
@@ -245,7 +307,7 @@ void *redwall_action(int nb, void **args)
 		}
 	}
 
-	if ((lr || ud) && time_acc > 100000) {
+	if ((lr || ud) && time_acc > 100000 && pc.dir0_flag) {
 		yesCall(sprite_man_handlerAdvance, pc.s);
 	}
 
@@ -302,6 +364,21 @@ void *redwall_action(int nb, void **args)
 				lr = 0;
 				ud = 0;
 				mv_acc = 0;
+
+				pc.x -= 110;
+				pc.y -= 110;
+
+				dead_refresh();
+				yeSetAt(pc.s, "x", 0);
+				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+				dead_refresh();
+				yeSetAt(pc.s, "x", 24);
+				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+				dead_refresh();
+				yeSetAt(pc.s, "x", 48);
+				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+				dead_refresh();
+
 				if (die_fnc) {
 					yesCall(die_fnc, rw);
 				} else {
@@ -440,7 +517,7 @@ void *redwall_init(int nb, void **args)
 		chassepot_e.sprite.path = "mc_placeholder.png";
 		chassepot_e.sprite.length = 4;
 		chassepot_e.sprite.size = 24;
-		chassepot_e.sprite["src-pos"] = 244;
+		chassepot_e.sprite["src-pos"] = 240;
 	}
 	chassepot.e = yesCall(ygGet("sprite-man.createHandler"),
 			      chassepot_e, rw_c);
