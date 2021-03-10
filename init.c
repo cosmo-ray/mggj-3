@@ -64,6 +64,20 @@ static int sprit_flag_pos(void)
 	return PJ_UP;
 }
 
+static void dead_refresh(void)
+{
+	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
+					     NULL, NULL);
+
+	yesCall(sprite_man_handlerSetPos, pc.s, pos);
+	yesCall(sprite_man_handlerRefresh, pc.s);
+	Entity *c = yeGet(pc.s, "canvas");
+	ywCanvasSwapObj(rw_c, c, ywCanvasLastObj(rw_c));
+	ywCanvasForceSizeXY(c, 240, 240);
+	ygUpdateScreen();
+	usleep(300000);
+}
+
 static void repose_enemies(void)
 {
 	YE_FOREACH(enemies, enemy_ent) {
@@ -350,6 +364,21 @@ void *redwall_action(int nb, void **args)
 				lr = 0;
 				ud = 0;
 				mv_acc = 0;
+
+				pc.x -= 110;
+				pc.y -= 110;
+
+				dead_refresh();
+				yeSetAt(pc.s, "x", 0);
+				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+				dead_refresh();
+				yeSetAt(pc.s, "x", 24);
+				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+				dead_refresh();
+				yeSetAt(pc.s, "x", 48);
+				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+				dead_refresh();
+
 				if (die_fnc) {
 					yesCall(die_fnc, rw);
 				} else {
