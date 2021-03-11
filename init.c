@@ -8,7 +8,33 @@ int old_tl;
 void *ylpcsCreateHandler(void *character, void *canvas,
 			 void *father, void *name);
 
-#include "enemies.h"
+struct type {
+	const char *spath;
+	int w;
+	int h;
+	int sprite_len;
+	int hp;
+	void (*ai)(void);
+};
+
+struct unit {
+	struct type *t;
+	int x;
+	int y;
+	int hp;
+	Entity *s;
+};
+
+struct type rat = {"enemy_placeholder_melee.png", 24, 24, 6, 1};
+struct type shooter = {"enemy_placeholder.png", 24, 24, 6, 1};
+
+struct {
+	struct type *t;
+	char *name;
+} enemies_types[] = {
+	{ &rat, "rat" }
+};
+
 
 #define PJ_DOWN 1
 #define PJ_LEFT 2
