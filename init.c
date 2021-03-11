@@ -17,9 +17,14 @@ void *ylpcsCreateHandler(void *character, void *canvas,
 
 struct weapon {
 	Entity *e;
+	void (*fire)(struct weapon *);
 };
 
-struct weapon chassepot = {NULL};
+void fire(struct weapon *w);
+void mele_attack(struct weapon *w);
+
+struct weapon chassepot = {NULL, fire};
+struct weapon chassepot_bayonette = {NULL, mele_attack};
 
 struct {
 	int x;
@@ -110,7 +115,7 @@ static void repose_cam(Entity *rw)
 
 	Entity *e = pc.weapon->e;
 	int gun_add_x = 0, gun_add_y = 4;
-	switch (sprit_flag_pos()) {
+	switch(sprit_flag_pos()) {
 	case PJ_DOWN:
 		if (!pc.dir0_flag)
 			yeSetAt(pc.s, "x", 24);
@@ -245,6 +250,62 @@ void create_bullet(Entity *mouse_pos)
 	yeCreateInt(6, b, "px_per_ms");
 }
 
+void fire(struct weapon *w)
+{
+	int xadd = (pc.dir_flag & PJ_LEFT) ? -1 :
+		((pc.dir_flag & PJ_RIGHT) ? 1 : 0);
+	int yadd = (pc.dir_flag & PJ_DOWN) ? 1 :
+		((pc.dir_flag & PJ_UP) ? -1 : 0);
+	yeAutoFree Entity *p =
+		ywPosCreate(pc.x + xadd, pc.y + yadd, NULL, NULL);
+	ywPosSub(p, yeGet(rw_c, "cam"));
+	yePrint(p);
+	create_bullet(p);
+}
+
+void mele_attack(struct weapon *weapon)
+{
+	int x, y, w, h;
+	int p = sprit_flag_pos();
+
+	switch (p) {
+	case PJ_DOWN:
+	case PJ_UP:
+		w = 10;
+		h = 24;
+		x = pc.x + 5;
+		if (p == PJ_DOWN) {
+			y = pc.y + 24;
+		} else {
+			y = pc.y - 24;
+		}
+		break;
+	case PJ_LEFT:
+	case PJ_RIGHT:
+		w = 24;
+		h = 10;
+		y = pc.y + 5;
+		if (p == PJ_LEFT)
+			x = pc.x - 24;
+		else
+			x = pc.x + 24;
+		break;
+	}
+	yeAutoFree Entity *r = ywRectCreateInts(x, y, w, h, NULL, NULL);
+	yeAutoFree Entity *cols = ywCanvasNewCollisionsArrayWithRectangle(rw_c, r);
+
+
+	YE_FOREACH(cols, c) {
+		/* yePrint(c); */
+		if (yeGet(c, "enemy")) {
+			Entity *enemy = yeGet(c, "enemy");
+			ywCanvasRemoveObj(rw_c, c);
+			yeRemoveChild(enemies, enemy);
+		}
+	}
+
+}
+
 void *redwall_action(int nb, void **args)
 {
 	Entity *rw = args[0];
@@ -283,19 +344,11 @@ void *redwall_action(int nb, void **args)
 	int fire = yevIsGrpDown(evs, yeGet(rw, "fire_grp"));
 
 	if (fire) {
-		int xadd = (pc.dir_flag & PJ_LEFT) ? -1 :
-			((pc.dir_flag & PJ_RIGHT) ? 1 : 0);
-		int yadd = (pc.dir_flag & PJ_DOWN) ? 1 :
-			((pc.dir_flag & PJ_UP) ? -1 : 0);
-		yeAutoFree Entity *p =
-			ywPosCreate(pc.x + xadd, pc.y + yadd, NULL, NULL);
-		ywPosSub(p, yeGet(rw_c, "cam"));
-		yePrint(p);
-		create_bullet(p);
+		pc.weapon->fire(&pc.weapon);
 	}
 
-	Entity *pc_rect = ywRectReCreateInts(pc.x + 6, pc.y, 10,
-					     pc.h, NULL, NULL);
+	yeAutoFree Entity *pc_rect = ywRectCreateInts(pc.x + 6, pc.y, 10,
+						      pc.h, NULL, NULL);
 	yeAutoFree Entity *col =
 		ywCanvasNewCollisionsArrayWithRectangle(rw_c, pc_rect);
 
@@ -359,6 +412,10 @@ void *redwall_action(int nb, void **args)
 
 			if (ywCanvasObjDistanceXY(cobj,
 						  pc.x, pc.y) < 30) {
+				ywCntPopLastEntry(rw);
+
+				ywCanvasNewRectangle(rw_c, 0, 0, 2048, 2048, "rgba: 0 0 0 255");
+				ywCanvasNewRectangle(rw_c, 0, 0, ww, wh, "rgba: 0 0 0 0");
 				Entity *die_fnc = ygGet(yeGetStringAt(rw, "die"));
 
 				lr = 0;
@@ -520,6 +577,19 @@ void *redwall_init(int nb, void **args)
 		chassepot_e.sprite["src-pos"] = 240;
 	}
 	chassepot.e = yesCall(ygGet("sprite-man.createHandler"),
+			      chassepot_e, rw_c);
+
+	yeAutoFree Entity *chassepot_bayonette_e = yeCreateArray(NULL, NULL);
+
+	YEntityBlock {
+		chassepot_e.sprite = {};
+		chassepot_e.sprite.path = "enemy_placeholder_melee.png";
+		chassepot_e.sprite.length = 4;
+		chassepot_e.sprite.size = 24;
+		chassepot_e.sprite["src-pos"] = 240;
+	}
+
+	chassepot_bayonette.e = yesCall(ygGet("sprite-man.createHandler"),
 			      chassepot_e, rw_c);
 
 	pc.weapon = &chassepot;
