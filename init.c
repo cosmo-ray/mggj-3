@@ -23,12 +23,13 @@ struct unit {
 	int x;
 	int y;
 	int hp;
-	int reload;
-	int x_speed;
-	int y_speed;
+	double reload;
+	double x_speed;
+	double y_speed;
 	double save_x;
 	double save_y;
 	Entity *s;
+	Entity *self;
 };
 
 static void init_ranger(struct unit *enemy)
@@ -43,7 +44,7 @@ static int range_ai(struct unit *enemy);
 
 struct type rat = {"enemy_placeholder_melee.png", 24, 24, 6, 1, mele_ai, NULL};
 struct type shooter = {"enemy_placeholder.png", 24, 24, 6, 1, range_ai};
-struct type byllet = {"bullet.png", 24, 24, 1, -1, bullet_ai};
+struct type bullet = {"bullet.png", 24, 24, 1, -1, bullet_ai};
 static int time_acc;
 
 struct {
@@ -352,10 +353,10 @@ void mele_attack(struct weapon *weapon)
 
 }
 
-static void create_enemy(struct type *t, Entity *pos)
+static struct unit *create_enemy(struct type *t, Entity *pos)
 {
 	if (!t)
-		return;
+		return NULL;
 
 	struct unit *enemy = malloc(sizeof *enemy);
 	yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
@@ -374,16 +375,24 @@ static void create_enemy(struct type *t, Entity *pos)
 	yeCreateString(enemy->t->spath, sprite, "path");
 
 	enemy->s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
-
-	yeSetFreeAdDestroy(yeCreateData(enemy, enemies, NULL));
+	enemy->self = yeCreateData(enemy, enemies, NULL);
+	yeSetFreeAdDestroy(enemy->self);
 	if (t->init)
 		t->init(enemy);
-
+	return enemy;
 }
 
 static int bullet_ai(struct unit *enemy)
 {
 	printf("bullet AI !!!\n");
+	enemy->reload -= ywidGetTurnTimer() / (double)10000;
+	enemy->x += enemy->x_speed * ywidGetTurnTimer() / (double)10000;
+	enemy->y += enemy->y_speed * ywidGetTurnTimer() / (double)10000;
+	if (enemy->reload <= 0) {
+		ywCanvasRemoveObj(rw_c, yeGet(enemy->s, "canvas"));
+		yeRemoveChild(enemies, enemy->self);
+		return 0;
+	}
 	return 0;
 }
 
@@ -392,7 +401,25 @@ static int range_ai(struct unit *enemy)
 	Entity *cobj = yeGet(enemy->s, "canvas");
 
 	if (ywCanvasObjDistanceXY(cobj, pc.x, pc.y) < 500) {
-		printf("fire !!\n");
+		if (enemy->reload <= 0) {
+			yeAutoFree Entity *pos = ywPosCreate(enemy->x, enemy->y,
+							     NULL, NULL);
+			enemy->reload = 400;
+			struct unit *b = create_enemy(&bullet, pos);
+			yeAutoFree Entity *pc_pos = ywPosCreate(pc.x, pc.y,
+								NULL, NULL);
+			yeAutoFree Entity *seg = ywSegmentFromPos(pos, pc_pos,
+								  NULL, NULL);
+			int dis = ywPosDistance(pos, pc_pos);
+
+			printf("%f %f\n", 1.0 * ywSizeW(seg) / dis,
+			       1.0 * ywSizeH(seg) / dis);
+			b->reload = 150;
+			b->x_speed = 4.0 * ywSizeW(seg) / dis;
+			b->y_speed = 4.0 * ywSizeH(seg) / dis;
+		} else {
+			enemy->reload -= ywidGetTurnTimer() / (double)10000;
+		}
 	}
 	return 0;
 }
@@ -401,8 +428,7 @@ static int mele_ai(struct unit *enemy)
 {
 	Entity *cobj = yeGet(enemy->s, "canvas");
 
-	if (ywCanvasObjDistanceXY( cobj,
-				   pc.x, pc.y) < 300) {
+	if (ywCanvasObjDistanceXY(cobj, pc.x, pc.y) < 300) {
 		double x = 0, y = 0, s;
 		double advance = 1.8 * ywidGetTurnTimer() / (double)10000;
 
