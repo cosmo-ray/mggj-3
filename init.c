@@ -389,10 +389,22 @@ static int bullet_ai(struct unit *enemy)
 	enemy->x += enemy->x_speed * ywidGetTurnTimer() / (double)10000;
 	enemy->y += enemy->y_speed * ywidGetTurnTimer() / (double)10000;
 	if (enemy->reload <= 0) {
-		ywCanvasRemoveObj(rw_c, yeGet(enemy->s, "canvas"));
-		yeRemoveChild(enemies, enemy->self);
-		return 0;
+		return 2;
 	}
+	Entity *cobj = yeGet(enemy->s, "canvas");
+	if (ywCanvasObjDistanceXY(cobj,
+				  pc.x, pc.y) < 30 &&
+	    ywCanvasObjectsCheckColisions(cobj, yeGet(pc.s, "canvas"))) {
+		return 1;
+	}
+
+	yeAutoFree Entity *cols = ywCanvasNewCollisionsArray(rw_c, cobj);
+	YE_FOREACH(cols, c) {
+		if (yeGetIntAt(c, "Collision")) {
+			return 2;
+		}
+	}
+
 	return 0;
 }
 
@@ -404,7 +416,7 @@ static int range_ai(struct unit *enemy)
 		if (enemy->reload <= 0) {
 			yeAutoFree Entity *pos = ywPosCreate(enemy->x, enemy->y,
 							     NULL, NULL);
-			enemy->reload = 400;
+			enemy->reload = 555;
 			struct unit *b = create_enemy(&bullet, pos);
 			yeAutoFree Entity *pc_pos = ywPosCreate(pc.x, pc.y,
 								NULL, NULL);
@@ -434,7 +446,8 @@ static int mele_ai(struct unit *enemy)
 
 
 		if (ywCanvasObjDistanceXY(cobj,
-					  pc.x, pc.y) < 30) {
+					  pc.x, pc.y) < 30 &&
+		    ywCanvasObjectsCheckColisions(cobj, yeGet(pc.s, "canvas"))) {
 			return 1;
 		}
 		x = pc.x - enemy->x;
@@ -586,8 +599,9 @@ void *redwall_action(int nb, void **args)
 
 	YE_FOREACH(enemies, e) {
 		struct unit *enemy = yeGetData(e);
+		int ai_ret = enemy->t->ai(enemy);
 
-		if (enemy->t->ai(enemy)) {
+		if (ai_ret == 1) {
 			/* remove up layer */
 			ywCntPopLastEntry(rw);
 
@@ -619,6 +633,9 @@ void *redwall_action(int nb, void **args)
 				ygTerminate();
 			}
 			return (void *)ACTION;
+		} else if (ai_ret == 2) {
+			ywCanvasRemoveObj(rw_c, yeGet(enemy->s, "canvas"));
+			yeRemoveChild(enemies, e);
 		}
 	}
 	if (time_acc > 100000)
