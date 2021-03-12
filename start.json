@@ -1,7 +1,6 @@
 {
     "name": "redwall",
     "starting widget": "main",
-    "window size" : [1024, 600],
     "main": {
 	"<type>": "menu",
         "text-align": "center",
@@ -10,6 +9,10 @@
 		"text" : "New Game",
 		"next" : "redwall.story.begin",
 		"action" : "menuNext"
+	    },
+	    {
+		"text" : "Full Screen",
+		"action" : "FullScreenOnOff"
 	    },
 	    {
 		"text" : "Quit",
