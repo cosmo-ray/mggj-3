@@ -26,6 +26,8 @@ struct unit {
 	int reload;
 	int x_speed;
 	int y_speed;
+	double save_x;
+	double save_y;
 	Entity *s;
 };
 
@@ -363,6 +365,8 @@ static void create_enemy(struct type *t, Entity *pos)
 	enemy->x = ywPosX(pos);
 	enemy->y = ywPosY(pos);
 	enemy->hp = t->hp;
+	enemy->save_y = 0;
+	enemy->save_x = 0;
 	yeCreateString(enemy->t->spath, sprite, "path");
 	yeCreateInt(enemy->t->sprite_len, sprite, "length");
 	yeCreateInt(enemy->t->h, sprite, "size");
@@ -399,8 +403,8 @@ static int mele_ai(struct unit *enemy)
 
 	if (ywCanvasObjDistanceXY( cobj,
 				   pc.x, pc.y) < 300) {
-		int x = 0, y = 0, s;
-		int advance = 1 * ywidGetTurnTimer() / (double)10000;
+		double x = 0, y = 0, s;
+		double advance = 1.8 * ywidGetTurnTimer() / (double)10000;
 
 
 		if (ywCanvasObjDistanceXY(cobj,
@@ -410,11 +414,21 @@ static int mele_ai(struct unit *enemy)
 		x = pc.x - enemy->x;
 		s = x;
 		x = yuiAbs(x) > advance ? advance : yuiAbs(x);
+		enemy->save_x += x - floor(x);
+		if (enemy->save_x > 1) {
+			x += floor(enemy->save_x);
+			enemy->save_x -= floor(enemy->save_x);
+		}
 		x = s < 0 ? -x : x;
 
 		y = pc.y - enemy->y;
 		s = y;
 		y = yuiAbs(y) > advance ? advance : yuiAbs(y);
+		enemy->save_y += y - floor(y);
+		if (enemy->save_y > 1) {
+			y += floor(enemy->save_y);
+			enemy->save_y -= floor(enemy->save_y);
+		}
 		y = s < 0 ? -y : y;
 		enemy->x += x;
 		enemy->y += y;
