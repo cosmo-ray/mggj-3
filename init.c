@@ -436,7 +436,7 @@ void *redwall_action(int nb, void **args)
 	int fire = yevIsGrpDown(evs, yeGet(rw, "fire_grp"));
 
 	if (fire) {
-		pc.weapon->fire(&pc.weapon);
+		pc.weapon->fire(pc.weapon);
 	}
 
 	yeAutoFree Entity *pc_rect = ywRectCreateInts(pc.x + 6, pc.y, 10,
