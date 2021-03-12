@@ -15,6 +15,7 @@ struct type {
 	int sprite_len;
 	int hp;
 	int (*ai)(struct unit *);
+	void (*init)(struct unit *);
 };
 
 struct unit {
@@ -22,25 +23,33 @@ struct unit {
 	int x;
 	int y;
 	int hp;
+	int reload;
+	int x_speed;
+	int y_speed;
 	Entity *s;
 };
 
-static int mele_ai(struct unit *enemy);
-
-static inline int range_ai(struct unit *enemy)
+static void init_ranger(struct unit *enemy)
 {
-	return mele_ai(enemy);
+	enemy->reload = 5;
 }
 
-struct type rat = {"enemy_placeholder_melee.png", 24, 24, 6, 1, mele_ai};
+static int mele_ai(struct unit *enemy);
+
+static int bullet_ai(struct unit *enemy);
+static int range_ai(struct unit *enemy);
+
+struct type rat = {"enemy_placeholder_melee.png", 24, 24, 6, 1, mele_ai, NULL};
 struct type shooter = {"enemy_placeholder.png", 24, 24, 6, 1, range_ai};
+struct type byllet = {"bullet.png", 24, 24, 1, -1, bullet_ai};
 static int time_acc;
 
 struct {
 	struct type *t;
 	char *name;
 } enemies_types[] = {
-	{ &rat, "rat" }
+	{ &rat, "rat" },
+	{ &shooter, "shooter" }
 };
 
 
@@ -341,6 +350,49 @@ void mele_attack(struct weapon *weapon)
 
 }
 
+static void create_enemy(struct type *t, Entity *pos)
+{
+	if (!t)
+		return;
+
+	struct unit *enemy = malloc(sizeof *enemy);
+	yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
+	Entity *sprite = yeCreateArray(s, "sprite");
+
+	enemy->t = t;
+	enemy->x = ywPosX(pos);
+	enemy->y = ywPosY(pos);
+	enemy->hp = t->hp;
+	yeCreateString(enemy->t->spath, sprite, "path");
+	yeCreateInt(enemy->t->sprite_len, sprite, "length");
+	yeCreateInt(enemy->t->h, sprite, "size");
+	yeCreateInt(0, sprite, "src-pos");
+	yeCreateString(enemy->t->spath, sprite, "path");
+
+	enemy->s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
+
+	yeSetFreeAdDestroy(yeCreateData(enemy, enemies, NULL));
+	if (t->init)
+		t->init(enemy);
+
+}
+
+static int bullet_ai(struct unit *enemy)
+{
+	printf("bullet AI !!!\n");
+	return 0;
+}
+
+static int range_ai(struct unit *enemy)
+{
+	Entity *cobj = yeGet(enemy->s, "canvas");
+
+	if (ywCanvasObjDistanceXY(cobj, pc.x, pc.y) < 500) {
+		printf("fire !!\n");
+	}
+	return 0;
+}
+
 static int mele_ai(struct unit *enemy)
 {
 	Entity *cobj = yeGet(enemy->s, "canvas");
@@ -496,7 +548,8 @@ void *redwall_action(int nb, void **args)
 		struct unit *enemy = yeGetData(e);
 
 		if (enemy->t->ai(enemy)) {
-						ywCntPopLastEntry(rw);
+			/* remove up layer */
+			ywCntPopLastEntry(rw);
 
 			ywCanvasNewRectangle(rw_c, 0, 0, 2048, 2048, "rgba: 0 0 0 255");
 			ywCanvasNewRectangle(rw_c, 0, 0, ww, wh, "rgba: 0 0 0 0");
@@ -647,8 +700,6 @@ void *redwall_init(int nb, void **args)
 			continue;
 		}
 
-		yeAutoFree Entity *s = yeCreateArray(NULL, NULL);
-		Entity *sprite = yeCreateArray(s, "sprite");
 		if (!name)
 			continue;
 		for (int i = 0;
@@ -659,23 +710,7 @@ void *redwall_init(int nb, void **args)
 			}
 		}
 
-		if (!t) {
-			continue;
-		}
-		struct unit *enemy = malloc(sizeof *enemy);
-
-		enemy->t = t;
-		enemy->x = ywRectX(rect);
-		enemy->y = ywRectY(rect);
-		yeCreateString(enemy->t->spath, sprite, "path");
-		yeCreateInt(enemy->t->sprite_len, sprite, "length");
-		yeCreateInt(enemy->t->h, sprite, "size");
-		yeCreateInt(0, sprite, "src-pos");
-		yeCreateString(enemy->t->spath, sprite, "path");
-
-		enemy->s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
-
-		yeSetFreeAdDestroy(yeCreateData(enemy, enemies, NULL));
+		create_enemy(t, rect);
 	}
 
 	Entity *in = yeGet(entries, yeGetStringAt(rw, "in"));
