@@ -14,7 +14,7 @@ struct type {
 	int h;
 	int sprite_len;
 	int hp;
-	void (*ai)(void);
+	int (*ai)(struct unit *);
 };
 
 struct unit {
@@ -25,8 +25,16 @@ struct unit {
 	Entity *s;
 };
 
-struct type rat = {"enemy_placeholder_melee.png", 24, 24, 6, 1};
-struct type shooter = {"enemy_placeholder.png", 24, 24, 6, 1};
+static int mele_ai(struct unit *enemy);
+
+static inline int range_ai(struct unit *enemy)
+{
+	return mele_ai(enemy);
+}
+
+struct type rat = {"enemy_placeholder_melee.png", 24, 24, 6, 1, mele_ai};
+struct type shooter = {"enemy_placeholder.png", 24, 24, 6, 1, range_ai};
+static int time_acc;
 
 struct {
 	struct type *t;
@@ -64,14 +72,15 @@ struct {
 	int8_t dir_flag;
 } pc = {530, 460, 24, 24, NULL, &chassepot, NULL, 0, PJ_DOWN};
 
-Entity *rw_c;
-Entity *rw_uc;
-Entity *enemies;
-Entity *entries;
+static Entity *rw;
+static Entity *rw_c;
+static Entity *rw_uc;
+static Entity *enemies;
+static Entity *entries;
 
-Entity *sprite_man_handlerSetPos;
-Entity *sprite_man_handlerAdvance;
-Entity *sprite_man_handlerRefresh;
+static Entity *sprite_man_handlerSetPos;
+static Entity *sprite_man_handlerAdvance;
+static Entity *sprite_man_handlerRefresh;
 
 static int sprit_flag_pos(void)
 {
@@ -332,14 +341,71 @@ void mele_attack(struct weapon *weapon)
 
 }
 
+static int mele_ai(struct unit *enemy)
+{
+	Entity *cobj = yeGet(enemy->s, "canvas");
+
+	if (ywCanvasObjDistanceXY( cobj,
+				   pc.x, pc.y) < 300) {
+		int x = 0, y = 0, s;
+		int advance = 1 * ywidGetTurnTimer() / (double)10000;
+
+
+		if (ywCanvasObjDistanceXY(cobj,
+					  pc.x, pc.y) < 30) {
+			return 1;
+		}
+		x = pc.x - enemy->x;
+		s = x;
+		x = yuiAbs(x) > advance ? advance : yuiAbs(x);
+		x = s < 0 ? -x : x;
+
+		y = pc.y - enemy->y;
+		s = y;
+		y = yuiAbs(y) > advance ? advance : yuiAbs(y);
+		y = s < 0 ? -y : y;
+		enemy->x += x;
+		enemy->y += y;
+		yeAutoFree Entity *rect =
+			ywRectReCreateInts(enemy->x, enemy->y,
+					   enemy->t->w,
+					   enemy->t->h,
+					   NULL, NULL);
+		yeAutoFree Entity *col =
+			ywCanvasNewCollisionsArrayWithRectangle(rw_c,
+								rect);
+
+		if (x < 0) {
+			yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 72);
+		} else if (x > 0) {
+			yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 48);
+		} else if (y < 0) {
+			yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 24);
+		} else if (y > 0) {
+			yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 0);
+		}
+		YE_FOREACH(col, c) {
+			if (yeGetIntAt(c, "Collision")) {
+				enemy->x -= x;
+				enemy->y -= y;
+				return 0;
+			}
+		}
+		if (time_acc > 100000) {
+			yesCall(sprite_man_handlerAdvance, enemy->s);
+			yesCall(sprite_man_handlerRefresh, enemy->s);
+		}
+	}
+	return 0;
+
+}
+
 void *redwall_action(int nb, void **args)
 {
-	Entity *rw = args[0];
 	Entity *evs = args[1];
 	static int lr = 0, ud = 0;
 	static double mv_acc;
 	double mv_pix = 2 * ywidGetTurnTimer() / (double)10000;
-	static int time_acc;
 
 	time_acc += ywidGetTurnTimer();
 	mv_acc += mv_pix - floor(mv_pix);
@@ -428,90 +494,38 @@ void *redwall_action(int nb, void **args)
 
 	YE_FOREACH(enemies, e) {
 		struct unit *enemy = yeGetData(e);
-		Entity *cobj = yeGet(enemy->s, "canvas");
 
-		if (ywCanvasObjDistanceXY( cobj,
-			    pc.x, pc.y) < 300) {
-			int x = 0, y = 0, s;
-			int advance = 1 * ywidGetTurnTimer() / (double)10000;
+		if (enemy->t->ai(enemy)) {
+						ywCntPopLastEntry(rw);
 
+			ywCanvasNewRectangle(rw_c, 0, 0, 2048, 2048, "rgba: 0 0 0 255");
+			ywCanvasNewRectangle(rw_c, 0, 0, ww, wh, "rgba: 0 0 0 0");
+			Entity *die_fnc = ygGet(yeGetStringAt(rw, "die"));
 
-			if (ywCanvasObjDistanceXY(cobj,
-						  pc.x, pc.y) < 30) {
-				ywCntPopLastEntry(rw);
+			lr = 0;
+			ud = 0;
+			mv_acc = 0;
 
-				ywCanvasNewRectangle(rw_c, 0, 0, 2048, 2048, "rgba: 0 0 0 255");
-				ywCanvasNewRectangle(rw_c, 0, 0, ww, wh, "rgba: 0 0 0 0");
-				Entity *die_fnc = ygGet(yeGetStringAt(rw, "die"));
+			pc.x -= 110;
+			pc.y -= 110;
 
-				lr = 0;
-				ud = 0;
-				mv_acc = 0;
+			dead_refresh();
+			yeSetAt(pc.s, "x", 0);
+			yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+			dead_refresh();
+			yeSetAt(pc.s, "x", 24);
+			yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+			dead_refresh();
+			yeSetAt(pc.s, "x", 48);
+			yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
+			dead_refresh();
 
-				pc.x -= 110;
-				pc.y -= 110;
-
-				dead_refresh();
-				yeSetAt(pc.s, "x", 0);
-				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
-				dead_refresh();
-				yeSetAt(pc.s, "x", 24);
-				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
-				dead_refresh();
-				yeSetAt(pc.s, "x", 48);
-				yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
-				dead_refresh();
-
-				if (die_fnc) {
-					yesCall(die_fnc, rw);
-				} else {
-					ygTerminate();
-				}
-				return (void *)ACTION;
+			if (die_fnc) {
+				yesCall(die_fnc, rw);
+			} else {
+				ygTerminate();
 			}
-			x = pc.x - enemy->x;
-			s = x;
-			x = yuiAbs(x) > advance ? advance : yuiAbs(x);
-			x = s < 0 ? -x : x;
-
-			y = pc.y - enemy->y;
-			s = y;
-			y = yuiAbs(y) > advance ? advance : yuiAbs(y);
-			y = s < 0 ? -y : y;
-			enemy->x += x;
-			enemy->y += y;
-			yeAutoFree Entity *rect =
-				ywRectReCreateInts(enemy->x, enemy->y,
-						   enemy->t->w,
-						   enemy->t->h,
-						   NULL, NULL);
-			yeAutoFree Entity *col =
-				ywCanvasNewCollisionsArrayWithRectangle(rw_c,
-									rect);
-
-			if (x < 0) {
-				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 72);
-			} else if (x > 0) {
-				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 48);
-			} else if (y < 0) {
-				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 24);
-			} else if (y > 0) {
-				yeSetAt(yeGet(enemy->s, "sp"), "src-pos", 0);
-			}
-			YE_FOREACH(col, c) {
-				if (yeGetIntAt(c, "Collision")) {
-					enemy->x -= x;
-					enemy->y -= y;
-					goto continue_loop;
-				}
-			}
-			if (time_acc > 100000) {
-				yesCall(sprite_man_handlerAdvance, enemy->s);
-				yesCall(sprite_man_handlerRefresh, enemy->s);
-			}
-
-		continue_loop:
-
+			return (void *)ACTION;
 		}
 	}
 	if (time_acc > 100000)
@@ -535,7 +549,7 @@ void* redwall_destroy(int nb, void **args)
 
 void *redwall_init(int nb, void **args)
 {
-	Entity *rw = args[0];
+	rw = args[0];
 	yeAutoFree Entity *down_grp, *up_grp, *left_grp, *right_grp;
 	yeAutoFree Entity *fire_grp;
 
