@@ -717,8 +717,6 @@ skipp_movement:;
 		if (ai_ret & 2) {
 			ywCanvasRemoveObj(rw_c, yeGet(enemy->s, "canvas"));
 			yeRemoveChild(enemies, e);
-			lr = 0;
-			ud = 0;
 		}
 	}
 	if (time_acc > 100000)
