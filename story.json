@@ -18,8 +18,10 @@
 		"have been freed.",
 	    "These scientists, who were once cast aside as fools,",
 		"continued their research. In their research, they formulated",
-		"many theories on how this technology worked, some correct, some incorrect.",
-	    "By the end, they had managed to create many strange and remarkable devices.",
+		"many theories on how this technology worked, some correct,",
+		"some incorrect.",
+	    "By the end, they had managed to create many strange",
+		"and remarkable devices.",
 	],
 	"next" : "redwall.story.story2"
     },
