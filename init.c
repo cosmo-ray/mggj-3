@@ -557,9 +557,14 @@ void *redwall_action(int nb, void **args)
 		pc.invulnerable -= ywidGetTurnTimer() / (double)10000;
 		if (pc.invulnerable <= 0)
 			yeSetAt(pc.s, "text_idx", 0);
-		else if (pc.invulnerable > 30) {
+		else if (pc.invulnerable > 50) {
 			pc.x += pc.knokback_x;
 			pc.y += pc.knokback_y;
+			/* skipp movement, but stil get input */
+			yeveDirFromDirGrp(evs, yeGet(rw, "u_grp"), yeGet(rw, "d_grp"),
+					  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
+					  &ud, &lr, callback, NULL);
+
 			goto skipp_movement;
 		}
 	}
@@ -604,7 +609,14 @@ skipp_movement:;
 		ywCanvasNewCollisionsArrayWithRectangle(rw_c, pc_rect);
 
 	YE_FOREACH(col, c) {
-		if (yeGetIntAt(c, "Collision")) {
+		if (!yeGetIntAt(c, "Collision"))
+			continue;
+		yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
+						     NULL, NULL);
+
+		yesCall(sprite_man_handlerSetPos, pc.s, pos);
+		Entity *pc_c = yeGet(pc.s, "canvas");
+		if (ywCanvasObjectsCheckColisions(pc_c, c)) {
 			pc.x = ox;
 			pc.y = oy;
 			break;
