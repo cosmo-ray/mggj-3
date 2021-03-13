@@ -411,11 +411,8 @@
         {
          "firstgid":6019,
          "source":"cimetery.json"
-        }, 
-        {
-         "firstgid":17027,
-         "source":"..\/..\/..\/Pictures\/current\/mgj3\/p\u00e8relachaise_placeholder2.tsx"
-        }],
+        }
+],
  "tilewidth":24,
  "type":"map",
  "version":1,

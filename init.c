@@ -425,7 +425,7 @@ static int bullet_ai(struct unit *enemy)
 	}
 	Entity *cobj = yeGet(enemy->s, "canvas");
 	if (ywCanvasObjDistanceXY(cobj,
-				  pc.x, pc.y) < 30 &&
+				  pc.x, pc.y) < 50 &&
 	    ywCanvasObjectsCheckColisions(cobj, yeGet(pc.s, "canvas"))) {
 		return 3;
 	}
@@ -477,7 +477,7 @@ static int mele_ai(struct unit *enemy)
 		return 0;
 	if (ywCanvasObjDistanceXY(cobj, pc.x, pc.y) < 300) {
 		double x = 0, y = 0, s;
-		double advance = 1.8 * ywidGetTurnTimer() / (double)10000;
+		double advance = 1.6 * ywidGetTurnTimer() / (double)10000;
 
 
 		if (ywCanvasObjDistanceXY(cobj,
@@ -705,6 +705,8 @@ skipp_movement:;
 		if (ai_ret & 2) {
 			ywCanvasRemoveObj(rw_c, yeGet(enemy->s, "canvas"));
 			yeRemoveChild(enemies, e);
+			lr = 0;
+			ud = 0;
 		}
 	}
 	if (time_acc > 100000)
