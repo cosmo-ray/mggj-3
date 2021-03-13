@@ -14,6 +14,7 @@ struct type {
 	int h;
 	int sprite_len;
 	int hp;
+	double invulnerable;
 	int (*ai)(struct unit *);
 	void (*init)(struct unit *);
 };
@@ -42,9 +43,28 @@ static int mele_ai(struct unit *enemy);
 static int bullet_ai(struct unit *enemy);
 static int range_ai(struct unit *enemy);
 
-struct type rat = {"enemy_placeholder_melee.png", 24, 24, 6, 1, mele_ai, NULL};
-struct type shooter = {"enemy_placeholder.png", 24, 24, 6, 1, range_ai};
-struct type bullet = {"bullet.png", 24, 24, 1, -1, bullet_ai};
+struct type rat = {
+	"enemy_placeholder_melee.png", 24, 24,
+	6, 1,
+	0,
+	mele_ai, NULL
+};
+
+struct type shooter = {
+	"enemy_placeholder.png",
+	24, 24,
+	6, 1,
+	0,
+	range_ai, init_ranger
+};
+
+struct type bullet = {
+	"bullet.png",
+	24, 24,
+	1, -1,
+	0,
+	bullet_ai, NULL
+};
 static int time_acc;
 
 struct {
@@ -64,31 +84,41 @@ struct {
 struct weapon {
 	Entity *e;
 	void (*fire)(struct weapon *);
+	const char *name;
 };
 
 void fire(struct weapon *w);
 void mele_attack(struct weapon *w);
 
-struct weapon chassepot = {NULL, fire};
-struct weapon chassepot_bayonette = {NULL, mele_attack};
+struct weapon chassepot = {NULL, fire, "chassepot"};
+struct weapon chassepot_bayonette = {NULL, mele_attack, "bayonette"};
 
 struct {
 	int x;
 	int y;
 	int w;
 	int h;
-	Entity *s;
 	struct weapon *weapon;
+	Entity *s;
 	Entity *bullets;
 	int8_t dir0_flag;
 	int8_t dir_flag;
-} pc = {530, 460, 24, 24, NULL, &chassepot, NULL, 0, PJ_DOWN};
+	int hp;
+	double invulnerable;
+	double knokback_x;
+	double knokback_y;
+} pc = {
+	530, 460, 24, 24,
+	&chassepot,
+	0
+};
 
 static Entity *rw;
 static Entity *rw_c;
 static Entity *rw_uc;
 static Entity *enemies;
 static Entity *entries;
+static Entity *rw_text;
 
 static Entity *sprite_man_handlerSetPos;
 static Entity *sprite_man_handlerAdvance;
@@ -157,6 +187,9 @@ static void repose_cam(Entity *rw)
 
 	ywPosSetInts(yeGet(rw_c, "cam"), x, y);
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
+
+	ywCanvasObjSetPos(rw_text, x + ww - 190, y + 10);
+
 	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
 					     NULL, NULL);
 
@@ -384,7 +417,6 @@ static struct unit *create_enemy(struct type *t, Entity *pos)
 
 static int bullet_ai(struct unit *enemy)
 {
-	printf("bullet AI !!!\n");
 	enemy->reload -= ywidGetTurnTimer() / (double)10000;
 	enemy->x += enemy->x_speed * ywidGetTurnTimer() / (double)10000;
 	enemy->y += enemy->y_speed * ywidGetTurnTimer() / (double)10000;
@@ -395,7 +427,7 @@ static int bullet_ai(struct unit *enemy)
 	if (ywCanvasObjDistanceXY(cobj,
 				  pc.x, pc.y) < 30 &&
 	    ywCanvasObjectsCheckColisions(cobj, yeGet(pc.s, "canvas"))) {
-		return 1;
+		return 3;
 	}
 
 	yeAutoFree Entity *cols = ywCanvasNewCollisionsArray(rw_c, cobj);
@@ -418,7 +450,8 @@ static int range_ai(struct unit *enemy)
 							     NULL, NULL);
 			enemy->reload = 555;
 			struct unit *b = create_enemy(&bullet, pos);
-			yeAutoFree Entity *pc_pos = ywPosCreate(pc.x, pc.y,
+			yeAutoFree Entity *pc_pos = ywPosCreate(pc.x + 12,
+								pc.y + 12,
 								NULL, NULL);
 			yeAutoFree Entity *seg = ywSegmentFromPos(pos, pc_pos,
 								  NULL, NULL);
@@ -440,6 +473,8 @@ static int mele_ai(struct unit *enemy)
 {
 	Entity *cobj = yeGet(enemy->s, "canvas");
 
+	if (pc.invulnerable > 0)
+		return 0;
 	if (ywCanvasObjDistanceXY(cobj, pc.x, pc.y) < 300) {
 		double x = 0, y = 0, s;
 		double advance = 1.8 * ywidGetTurnTimer() / (double)10000;
@@ -470,7 +505,9 @@ static int mele_ai(struct unit *enemy)
 		}
 		y = s < 0 ? -y : y;
 		enemy->x += x;
+		enemy->x_speed = x;
 		enemy->y += y;
+		enemy->y_speed = y;
 		yeAutoFree Entity *rect =
 			ywRectReCreateInts(enemy->x, enemy->y,
 					   enemy->t->w,
@@ -511,7 +548,22 @@ void *redwall_action(int nb, void **args)
 	static int lr = 0, ud = 0;
 	static double mv_acc;
 	double mv_pix = 2 * ywidGetTurnTimer() / (double)10000;
+	yeAutoFree Entity *txt = yeCreateString("Life: ", NULL, NULL);
+	yeStringAddInt(txt, pc.hp);
+	yeStringAdd(txt, "\nweapon: ");
+	yeStringAdd(txt, pc.weapon->name);
 
+	if (pc.invulnerable > 0) {
+		pc.invulnerable -= ywidGetTurnTimer() / (double)10000;
+		if (pc.invulnerable <= 0)
+			yeSetAt(pc.s, "text_idx", 0);
+		else if (pc.invulnerable > 30) {
+			pc.x += pc.knokback_x;
+			pc.y += pc.knokback_y;
+			goto skipp_movement;
+		}
+	}
+	ywCanvasStringSet(rw_text, txt);
 	time_acc += ywidGetTurnTimer();
 	mv_acc += mv_pix - floor(mv_pix);
 	if (mv_acc > 1) {
@@ -537,6 +589,8 @@ void *redwall_action(int nb, void **args)
 	} else if (pc.y < 0) {
 		pc.y = 0;
 	}
+
+skipp_movement:;
 
 	int fire = yevIsGrpDown(evs, yeGet(rw, "fire_grp"));
 
@@ -601,7 +655,19 @@ void *redwall_action(int nb, void **args)
 		struct unit *enemy = yeGetData(e);
 		int ai_ret = enemy->t->ai(enemy);
 
-		if (ai_ret == 1) {
+		if (ai_ret & 1) {
+			if (pc.invulnerable > 0)
+				goto not_dead;
+
+			pc.hp -= 1;
+			if (pc.hp) {
+				yeSetAt(pc.s, "text_idx", 1);
+				pc.knokback_x = enemy->x_speed * 2;
+				pc.knokback_y = enemy->y_speed * 2;
+				pc.invulnerable = 66;
+				goto not_dead;
+			}
+
 			/* remove up layer */
 			ywCntPopLastEntry(rw);
 
@@ -633,7 +699,10 @@ void *redwall_action(int nb, void **args)
 				ygTerminate();
 			}
 			return (void *)ACTION;
-		} else if (ai_ret == 2) {
+		}
+	not_dead:
+
+		if (ai_ret & 2) {
 			ywCanvasRemoveObj(rw_c, yeGet(enemy->s, "canvas"));
 			yeRemoveChild(enemies, e);
 		}
@@ -654,6 +723,8 @@ void* redwall_destroy(int nb, void **args)
 	enemies = NULL;
 	yeDestroy(entries);
 	entries = NULL;
+	yeDestroy(rw_text);
+	rw_text = NULL;
 	return NULL;
 }
 
@@ -686,6 +757,7 @@ void *redwall_init(int nb, void **args)
 
 	enemies = yeCreateArray(rw, "enemies");
 	entries = yeCreateArray(rw, "entries");
+
 	sprite_man_handlerSetPos = ygGet("sprite-man.handlerSetPos");
 	sprite_man_handlerAdvance = ygGet("sprite-man.handlerAdvance");
 	sprite_man_handlerRefresh = ygGet("sprite-man.handlerRefresh");
@@ -697,6 +769,7 @@ void *redwall_init(int nb, void **args)
 	rw_uc = ywCreateCanvasEnt(yeGet(rw, "entries"), NULL);
 	ywPosCreateInts(0, 0, rw_c, "cam");
 	ywPosCreateInts(0, 0, rw_uc, "cam");
+
 	void *ret = ywidNewWidget(rw, "container");
 	ww = ywRectW(yeGet(rw, "wid-pix"));
 	wh = ywRectH(yeGet(rw, "wid-pix"));
@@ -704,12 +777,18 @@ void *redwall_init(int nb, void **args)
 	void *rr = yesCall(ygGet("tiled.fileToCanvas"),
 			   "./pere-lachaise.json", rw_c, rw_uc, 1);
 
+	yeAutoFree Entity *useless = yeCreateString("", NULL, NULL);
+	rw_text = ywCanvasNewTextExt(rw_uc, 0, 0, useless,
+		"rgba: 255 255 255 255");
+
 	yeAutoFree Entity *pcs = yeCreateArray(NULL, NULL);
 
 	YEntityBlock {
 		pcs.sex = "female";
 		pcs.sprite = {};
-		pcs.sprite.path = "mc_placeholder.png";
+		pcs.sprite.paths = {};
+		pcs.sprite.paths[0] = "mc_placeholder.png";
+		pcs.sprite.paths[1] = "mc_hurt.png";
 		pcs.sprite.length = 6;
 		pcs.sprite.size = 24;
 		pcs.sprite["src-pos"] = 0;
@@ -775,6 +854,9 @@ void *redwall_init(int nb, void **args)
 		pc.y = ywRectY(in);
 		pc.x = ywRectX(in);
 	}
+	pc.hp = 3;
+	pc.invulnerable = 0;
+	pc.dir_flag = PJ_DOWN;
 	old_tl = ywGetTurnLengthOverwrite();
 	ywSetTurnLengthOverwrite(-1);
 	return ret;

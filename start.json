@@ -1,5 +1,6 @@
 {
     "name": "redwall",
+    "window name" : "Le Temps Des Escargo",
     "starting widget": "main",
     "main": {
 	"<type>": "menu",
