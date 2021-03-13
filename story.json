@@ -5,9 +5,16 @@
 	"action" : "nextOnKeyDown",
 	"background" : "rgba: 255 255 255 255",
 	"text" : [
-	    "- Science sympatic snail",
-	    "- Revolution",
-	    "- Pere lachaise"
+	    "May 27, 2871",
+	"Père-Lachaise Cemetery",
+
+	"[establish setting/immediate events]",
+
+	"At the last moment, you remember a strange device given to you previously, said to tap into the sympathetic powers of snails. There was no time to test it, but that hardly matters now.",
+
+	"As you activate the device, you suddenly feel the presence of many creatures all around you. As you call out to them for help, every snail in the vicinity begins to move towards you.",
+
+	"This may be a chance for one final stand."
 	],
 	"next" : "redwall.game"
     },
