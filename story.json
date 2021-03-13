@@ -5,18 +5,69 @@
 	"action" : "nextOnKeyDown",
 	"background" : "rgba: 255 255 255 255",
 	"text" : [
-	    "May 27, 2871",
-	"Père-Lachaise Cemetery",
-
-	"[establish setting/immediate events]",
-
-	"At the last moment, you remember a strange device given to you previously, said to tap into the sympathetic powers of snails. There was no time to test it, but that hardly matters now.",
-
-	"As you activate the device, you suddenly feel the presence of many creatures all around you. As you call out to them for help, every snail in the vicinity begins to move towards you.",
-
-	"This may be a chance for one final stand."
+	    "This may be a chance for one final stand.",
+	    "Paris City of Light",
+	    "Paris Tossed by waves but never sunk",
+	    "Paris that Survive 2 Revolutions",
+	    "Paris Resisting Bismark Besiege",
+	    "",
+	    "Paris is now Ravaged by fire",
+	    "Yet the flames of revolution and freedom",
+	    "still beat strong in my heart",
+	    "\n\n",
+	    "and here in this cimetety",
+	    "the monarchiste want to kill the Revolution",
+	    "But they didn't plane something",
+	    "Me, and my sympatic chassepot"
 	],
-	"next" : "redwall.game"
+	"next" : "redwall.story.story2"
+    },
+    "story2": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 255 255 255 255",
+	"text" : [
+	    "30 years ago,",
+	    "we've discover that snail had the hability to transmit",
+	    "message to an infinit distance when they mate",
+	    "Of coure this was ignored by the empror scientific",
+	    "But some peoples try to invest in this Technologie",
+	    "And the gouvernement call'em fool",
+	    "And thoses fool was send to asylum",
+	    "But eventually they got out",
+	    "And now Paris is free of tyrant and oligarch",
+	    "The fool did they research",
+	    "The fool did improve snail capacity",
+	    "The fool did succed in using snail to transphere small object",
+	    "\n",
+	    "The fool give Paris 2 gift, a rifle that automatically reload",
+	    "And a device that jam eveyone's brain on 1 KM to slow'em down"
+	],
+	"next" : "redwall.story.story3"
+    },
+    "story3": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 255 255 255 255",
+	"text": [
+	    "May 27, 2871",
+	    "Père-Lachaise Cemetery",
+
+	    "[establish setting/immediate events]",
+
+	    "At the last moment,",
+	    "you remember a strange device given to you previously,",
+	    "said to tap into the sympathetic powers of snails.",
+	    "There was no time to test it, but that hardly matters now.",
+
+	    "As you activate the device,",
+	    "you suddenly feel the presence of many creatures all around you.",
+	    "As you call out to them for help,",
+	    "every snail in the vicinity begins to move towards you."
+	],
+	"next": "redwall.game"
     },
     "die": {
 	"<type>" : "text-screen",
