@@ -16,12 +16,28 @@
 		"action" : "FullScreenOnOff"
 	    },
 	    {
+		"text" : "Credit",
+		"next" : "redwall.credit",
+		"action" : "menuNext"
+	    },
+	    {
 		"text" : "Quit",
 		"action" : "FinishGame"
 	    }
 
 	],
 	"background" : "rgba: 255 255 255 255"
+    },
+    "credit": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 0 0 0 255",
+	"text-color": "rgba: 255 255 255 255",
+	"text" : [
+	    "Code: Matthias Gatto, License: LGPL v3, uso.cosmo.ray@gmail.com"
+	],
+	"next" : "redwall.main"
     },
     "game": {
 	"<type>": "redwall",
