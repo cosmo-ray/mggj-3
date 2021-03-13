@@ -5,7 +5,9 @@
 	"action" : "nextOnKeyDown",
 	"background" : "rgba: 255 255 255 255",
 	"text" : [
-	    "story time !!!!"
+	    "- Science sympatic snail",
+	    "- Revolution",
+	    "- Pere lachaise"
 	],
 	"next" : "redwall.game"
     },

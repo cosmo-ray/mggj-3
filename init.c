@@ -66,6 +66,7 @@ struct type bullet = {
 	bullet_ai, NULL
 };
 static int time_acc;
+static int score;
 
 struct {
 	struct type *t;
@@ -552,6 +553,8 @@ void *redwall_action(int nb, void **args)
 	yeStringAddInt(txt, pc.hp);
 	yeStringAdd(txt, "\nweapon: ");
 	yeStringAdd(txt, pc.weapon->name);
+	yeStringAdd(txt, "\nscore: ");
+	yeStringAddInt(txt, score);
 
 	if (pc.invulnerable > 0) {
 		pc.invulnerable -= ywidGetTurnTimer() / (double)10000;
@@ -643,6 +646,7 @@ skipp_movement:;
 				Entity *enemy = yeGet(c, "enemy");
 				ywCanvasRemoveObj(rw_c, c);
 				yeRemoveChild(enemies, enemy);
+				++score;
 				goto remove;
 			}
 		}
@@ -746,6 +750,7 @@ void *redwall_init(int nb, void **args)
 	yeAutoFree Entity *down_grp, *up_grp, *left_grp, *right_grp;
 	yeAutoFree Entity *fire_grp;
 
+	score = 0;
 	yesCall(ygGet("tiled.setAssetPath"), "./");
 
 	down_grp = yevCreateGrp(0, 's', Y_DOWN_KEY);
