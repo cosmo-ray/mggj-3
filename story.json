@@ -7,11 +7,18 @@
 	"text-color": "rgba: 255 255 255 255",
 	"text" : [
 	    "20 years ago, it was discovered that snails have the ability to transmit messages an infinite distance after they mate.",
-	    "Of course, this was dismissed by the emperor's scientists as nonsense.",
-	    "One man, however, wished to look into it further. Gathering a team of interested peers, he prepared to research this strange, new technology.",
-	    "However, the government called them fools, and sent them all to the asylum.",
-		"But now that Paris is free of tyrants and oligarchs, they have been freed.",
-	    "These scientists, who were once cast aside as fools, continued their research. In their research, they formulated many theories on how this technology worked, some correct, some incorrect.",
+	    "Of course, this was dismissed by the emperor's",
+		"scientists as nonsense.",
+	    "One man, however, wished to look into it further.",
+		"Gathering a team of interested peers,",
+		"he prepared to research this strange, new technology.",
+	    "However, the government called them fools, and",
+		"sent them all to the asylum.",
+		"But now that Paris is free of tyrants and oligarchs, they",
+		"have been freed.",
+	    "These scientists, who were once cast aside as fools,",
+		"continued their research. In their research, they formulated",
+		"many theories on how this technology worked, some correct, some incorrect.",
 	    "By the end, they had managed to create many strange and remarkable devices.",
 	],
 	"next" : "redwall.story.story2"
@@ -32,9 +39,11 @@
 	    "Yet the flames of revolution and freedom",
 	    "still beat strong in your heart",
 	    "\n\n",
-	    "Here in this cemetery",
+	    "Here in this cemetery,",
 	    "Monarchists aim to kill the Revolution once and for all.",
-	    "You are one of only a few still standing in defense of the Revolution. But you have no more ammo, and are surrounded by soldiers with their guns pointed at you."
+	    "You are one of only a few still standing in defense of the"
+		"Revolution. But you have no more ammo, and are surrounded",
+		"by soldiers with their guns pointed at you."
 	],
 	"next" : "redwall.story.story3"
     },
@@ -45,17 +54,19 @@
 	"background" : "rgba: 0 0 0 255",
 	"text-color": "rgba: 255 255 255 255",
 	"text": [
-	    "At the last moment,",
-	    "You remember a strange device given to you previously,",
-	    "said to tap into the sympathetic powers of snails to a greater degree than ever before.",
-	    "There was no time to test it, but that hardly matters now.",
-
-	    "As you activate the device,",
-	    "you suddenly feel the presence of many creatures all around you.",
-	    "As you call out to them for help,",
-	    "every snail in the vicinity is suddenly teleported to you.",
-	    "At the same time, your clothes are replaced by a brilliant red dress.",
-	    "Your rifle has changed as well, and has a small device attached to it.",
+	    "At the last moment, you remember a strange",
+	    "device given to you previously, said to tap into",
+	    "the sympathetic powers of snails to a greater degree",
+	    "than ever before. There was no time to test it,",
+		" but that hardly matters now.",
+    "\n\n",
+	    "As you activate the device, you suddenly feel the presence",
+	    "of many creatures all around you. As you call out to them",
+	    "for help, every snail in the vicinity is suddenly",
+	    "teleported to you. At the same time, your clothes are",
+		"At the same time, your clothes are replaced by a brilliant red dress.",
+	    "replaced by a brilliant red dress. Your rifle has changed",
+		"as well, and has a small device attached to it.",
 	    "You feel the confidence you need to stand up and continue to fight!"
 	],
 	"next": "redwall.game"
