@@ -48,6 +48,7 @@ struct unit {
 	double save_y;
 	Entity *s;
 	Entity *self;
+	const char *name;
 	int is_last;
 };
 
@@ -97,6 +98,7 @@ struct type macmahon = {
 static int time_acc;
 static int score;
 static double slow_power;
+static struct unit *current_boss;
 
 struct {
 	struct type *t;
@@ -152,6 +154,7 @@ static Entity *enemies;
 static Entity *entries;
 static Entity *rw_text;
 static Entity *boss;
+static Entity *boss_nfo;
 
 static Entity *sprite_man_handlerSetPos;
 static Entity *sprite_man_handlerAdvance;
@@ -235,6 +238,8 @@ static void repose_cam(Entity *rw)
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
 
 	ywCanvasObjSetPos(rw_text, x + ww - 230, y + 10);
+
+	ywCanvasObjSetPos(boss_nfo, x + 30, y + 25);
 
 	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
 					     NULL, NULL);
@@ -648,6 +653,19 @@ void *redwall_action(int nb, void **args)
 		}
 	}
 	ywCanvasStringSet(rw_text, txt);
+	if (current_boss) {
+		yeAutoFree Entity *boss_txt =
+			yeCreateString(current_boss->name, NULL, NULL);
+		yeStringAdd(boss_txt, " [");
+		for (int i = 0; i < current_boss->t->hp; ++i) {
+			if (i < current_boss->hp)
+				yeStringAddCh(boss_txt, '*');
+			else
+				yeStringAddCh(boss_txt, '.');
+		}
+		yeStringAdd(boss_txt, "]");
+		ywCanvasStringSet(boss_nfo, boss_txt);
+	}
 	time_acc += turn_timer;
 	mv_acc += mv_pix - floor(mv_pix);
 	if (mv_acc > 1) {
@@ -748,7 +766,8 @@ skipp_movement:;
 			}
 			/* yePrint(c); */
 			Entity *enemy = yeGet(c, "enemy");
-			if (enemy) {
+			if (enemy &&
+			    ywCanvasObjectsCheckColisions(c, obj)) {
 				struct unit *e = yeGetData(enemy);
 
 				if (e->hp < 0)
@@ -798,8 +817,12 @@ skipp_movement:;
 		int been_invocked = yeGetIntAt(bb, 1);
 
 		if (!been_invocked && score_req <= score) {
+			struct unit *mh = create_enemy(&macmahon, yeGet(bb, 2));
+
 			yeSetAt(bb, 1, 1);
-			create_enemy(&macmahon, yeGet(bb, 2))->is_last = 1;
+			mh->is_last = 1;
+			mh->name = yeGetKeyAt(boss, i);
+			current_boss = mh;
 		}
 		i++;
 	}
@@ -817,7 +840,7 @@ skipp_movement:;
 				yeSetAt(pc.s, "text_idx", 1);
 				pc.knokback_x = enemy->x_speed * 2;
 				pc.knokback_y = enemy->y_speed * 2;
-				pc.invulnerable = 66;
+				pc.invulnerable = 75;
 				goto not_dead;
 			}
 
@@ -878,8 +901,11 @@ void* redwall_destroy(int nb, void **args)
 	entries = NULL;
 	yeDestroy(rw_text);
 	rw_text = NULL;
+	yeDestroy(boss_nfo);
+	boss_nfo = NULL;
 	yeDestroy(boss);
 	boss = NULL;
+	current_boss = NULL;
 	return NULL;
 }
 
@@ -890,6 +916,7 @@ void *redwall_init(int nb, void **args)
 	yeAutoFree Entity *fire_grp, *power_grp;
 
 	score = 0;
+	current_boss = NULL;
 	slow_power = 0;
 	yesCall(ygGet("tiled.setAssetPath"), "./");
 
@@ -941,6 +968,8 @@ void *redwall_init(int nb, void **args)
 	rw_text = ywCanvasNewTextExt(rw_uc, 0, 0, useless,
 		"rgba: 255 255 255 255");
 
+	boss_nfo = ywCanvasNewTextExt(rw_uc, 0, 0, useless,
+				      "rgba: 255 255 255 255");
 	yeAutoFree Entity *pcs = yeCreateArray(NULL, NULL);
 
 	YEntityBlock {

@@ -417,7 +417,7 @@
                         {
                          "name":"score_require",
                          "type":"int",
-                         "value":10
+                         "value":1
                         }],
                  "rotation":0,
                  "type":"",
