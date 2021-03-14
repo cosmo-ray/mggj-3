@@ -3,13 +3,28 @@
     "window name" : "Le Temps Des Escargo",
     "starting widget": "main",
     "main": {
+	"<type>": "container",
+	"entries" : [
+	    {"path" : "redwall.title", "size" : 20},
+	    {"path" : "redwall.main_menu"}
+	],
+	"current": 1,
+	"background" : "rgba: 255 255 255 255"
+    },
+    "title": {
+	"<type>": "text-screen",
+	"text": "",
+	"background": "titletext.png"
+    },
+    "main_menu": {
 	"<type>": "menu",
         "text-align": "center",
+	"background": "titlescreen_art.png",
 	"entries" : [
 	    {
 		"text" : "New Game",
 		"next" : "redwall.story.begin",
-		"action" : "menuNext"
+		"action" : "menuMainWidNext"
 	    },
 	    {
 		"text" : "Full Screen",
@@ -18,7 +33,7 @@
 	    {
 		"text" : "Credit",
 		"next" : "redwall.credit",
-		"action" : "menuNext"
+		"action" : "menuMainWidNext"
 	    },
 	    {
 		"text" : "Quit",
@@ -26,7 +41,6 @@
 	    }
 
 	],
-	"background" : "rgba: 255 255 255 255"
     },
     "credit": {
 	"<type>" : "text-screen",
