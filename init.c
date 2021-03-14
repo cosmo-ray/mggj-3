@@ -659,8 +659,17 @@ skipp_movement:;
 				goto remove;
 			}
 			/* yePrint(c); */
-			if (yeGet(c, "enemy")) {
-				Entity *enemy = yeGet(c, "enemy");
+			Entity *enemy = yeGet(c, "enemy");
+			if (enemy) {
+				struct unit *e = yeGetData(enemy);
+
+				if (e->hp < 0)
+					continue;
+				e->hp -= 1;
+				if (e->hp > 0) {
+					goto remove;
+				}
+				printf("%d - %d\n", e->hp, e->hp - 1);
 				ywCanvasRemoveObj(rw_c, c);
 				yeRemoveChild(enemies, enemy);
 				++score;
