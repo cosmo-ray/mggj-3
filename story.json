@@ -67,10 +67,25 @@
 	    "for help, every snail in the vicinity is suddenly",
 	    "teleported to you. At the same time, your clothes are",
 	    "replaced by a brilliant red dress. Your rifle has changed",
-		"as well, and has a small device attached to it.",
-	    "You feel the confidence you need to stand up and",
-		"continue to fight!"
+		"as well, and has a small device attached to it."
 	],
+	
+	"next" : "redwall.story.story4"
+    },
+    "story4": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 0 0 0 255",
+	"text-color": "rgba: 255 255 255 255",
+	"text": [
+    "\n\n",
+	    "\n\n",
+			    "\n\n",
+	    "You feel the confidence you need to stand up and",
+		"continue to fight!" 
+	],
+	
 	"next": "redwall.game"
     },
     "die": {
