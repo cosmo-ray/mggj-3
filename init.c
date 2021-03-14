@@ -84,6 +84,7 @@ struct type bullet = {
 };
 static int time_acc;
 static int score;
+static double slow_power;
 
 struct {
 	struct type *t;
@@ -125,6 +126,7 @@ struct {
 	double invulnerable;
 	double knokback_x;
 	double knokback_y;
+	double power_reload;
 } pc = {
 	530, 460, 24, 24,
 	&chassepot,
@@ -162,6 +164,19 @@ static int sprit_flag_pos(void)
 	else if (i == 48)
 		return PJ_RIGHT;
 	return PJ_UP;
+}
+
+static int wait_threshold;
+static int turn_timer;
+
+static void pow_refresh(Entity *h)
+{
+	yesCall(sprite_man_handlerRefresh, h);
+	Entity *c = yeGet(h, "canvas");
+	ywCanvasForceSizeXY(c, 240, 240);
+	ygUpdateScreen();
+	wait_threshold += 300000;
+	usleep(300000);
 }
 
 static void dead_refresh(void)
@@ -206,7 +221,7 @@ static void repose_cam(Entity *rw)
 	ywPosSetInts(yeGet(rw_c, "cam"), x, y);
 	ywPosSetInts(yeGet(rw_uc, "cam"), x, y);
 
-	ywCanvasObjSetPos(rw_text, x + ww - 190, y + 10);
+	ywCanvasObjSetPos(rw_text, x + ww - 230, y + 10);
 
 	yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
 					     NULL, NULL);
@@ -435,9 +450,17 @@ static struct unit *create_enemy(struct type *t, Entity *pos)
 
 static int bullet_ai(struct unit *enemy)
 {
-	enemy->reload -= ywidGetTurnTimer() / (double)10000;
-	enemy->x += enemy->x_speed * ywidGetTurnTimer() / (double)10000;
-	enemy->y += enemy->y_speed * ywidGetTurnTimer() / (double)10000;
+	double speed_x = enemy->x_speed;
+	double speed_y = enemy->y_speed;
+
+	enemy->reload -= turn_timer / (double)10000;
+	if (slow_power > 0) {
+		speed_x /= 3;
+		speed_y /= 3;
+	}
+	enemy->x += enemy->x_speed * turn_timer / (double)10000;
+	enemy->y += enemy->y_speed * turn_timer / (double)10000;
+
 	if (enemy->reload <= 0) {
 		return 2;
 	}
@@ -481,7 +504,7 @@ static int range_ai(struct unit *enemy)
 			b->x_speed = 4.0 * ywSizeW(seg) / dis;
 			b->y_speed = 4.0 * ywSizeH(seg) / dis;
 		} else {
-			enemy->reload -= ywidGetTurnTimer() / (double)10000;
+			enemy->reload -= turn_timer / (double)10000;
 		}
 	}
 	return 0;
@@ -495,7 +518,8 @@ static int mele_ai(struct unit *enemy)
 		return 0;
 	if (ywCanvasObjDistanceXY(cobj, pc.x, pc.y) < 300) {
 		double x = 0, y = 0, s;
-		double advance = 1.6 * ywidGetTurnTimer() / (double)10000;
+		double speed = slow_power > 0 ? 0.4 : 1.6;
+		double advance = speed * turn_timer / (double)10000;
 
 
 		if (ywCanvasObjDistanceXY(cobj,
@@ -565,7 +589,10 @@ void *redwall_action(int nb, void **args)
 	Entity *evs = args[1];
 	static int lr = 0, ud = 0;
 	static double mv_acc;
-	double mv_pix = 2 * ywidGetTurnTimer() / (double)10000;
+
+	turn_timer = ywidGetTurnTimer() - wait_threshold;
+	wait_threshold = 0;
+	double mv_pix = 2 * turn_timer / (double)10000;
 	yeAutoFree Entity *txt = yeCreateString("Life: ", NULL, NULL);
 	yeStringAddInt(txt, pc.hp);
 	yeStringAdd(txt, "\nweapon: ");
@@ -573,8 +600,22 @@ void *redwall_action(int nb, void **args)
 	yeStringAdd(txt, "\nscore: ");
 	yeStringAddInt(txt, score);
 
+	if (slow_power > 0) {
+		slow_power -= turn_timer / (double)10000;
+	}
+
+	if (pc.power_reload > 0) {
+		pc.power_reload -= turn_timer / (double)10000;
+	}
+	if (pc.power_reload < 0)
+		pc.power_reload = 0;
+
+	yeStringAdd(txt, "\nslow device ready: ");
+	yeStringAddInt(txt, 100 - pc.power_reload / 10);
+
+
 	if (pc.invulnerable > 0) {
-		pc.invulnerable -= ywidGetTurnTimer() / (double)10000;
+		pc.invulnerable -= turn_timer / (double)10000;
 		if (pc.invulnerable <= 0)
 			yeSetAt(pc.s, "text_idx", 0);
 		else if (pc.invulnerable > 50) {
@@ -589,7 +630,7 @@ void *redwall_action(int nb, void **args)
 		}
 	}
 	ywCanvasStringSet(rw_text, txt);
-	time_acc += ywidGetTurnTimer();
+	time_acc += turn_timer;
 	mv_acc += mv_pix - floor(mv_pix);
 	if (mv_acc > 1) {
 		mv_pix += floor(mv_acc);
@@ -621,6 +662,40 @@ skipp_movement:;
 
 	if (fire) {
 		pc.weapon->fire(pc.weapon);
+	}
+
+	int pow = yevIsGrpDown(evs, yeGet(rw, "power_grp"));
+
+	if (pow && pc.power_reload == 0) {
+		printf("activate power !\n");
+
+		yeAutoFree Entity *pow_sprite = yeCreateArray(NULL, NULL);
+		yeAutoFree Entity *pow_handler;
+		YEntityBlock {
+			pow_sprite.sprite = {};
+			pow_sprite.sprite.path = "slow_bomb.png";
+			pow_sprite.sprite.length = 6;
+			pow_sprite.sprite.size = 24;
+			pow_sprite.sprite["src-pos"] = 0;
+		}
+		printf("activate power 1!\n");
+		pow_handler = yesCall(ygGet("sprite-man.createHandler"),
+				      pow_sprite, rw_uc);
+
+		yeAutoFree Entity *pos = ywPosCreate(pc.x - 110, pc.y - 110,
+						     NULL, NULL);
+		printf("activate power 2!\n");
+		yesCall(sprite_man_handlerSetPos, pow_handler, pos);
+		pow_refresh(pow_handler);
+		for (int i = 0; i < 5; ++i) {
+			yesCall(sprite_man_handlerAdvance, pow_handler);
+			pow_refresh(pow_handler);
+		}
+
+		printf("activate power 3!\n");
+		yesCall(ygGet("sprite-man.handlerNullify"), pow_handler);
+		pc.power_reload = 1000;
+		slow_power = 200;
 	}
 
 	yeAutoFree Entity *pc_rect = ywRectCreateInts(pc.x + 6, pc.y, 10,
@@ -684,9 +759,9 @@ skipp_movement:;
 		}
 		double px_per_ms = yeGetIntAt(b, 3) / 2;
 		double advence_x = px_per_ms * yeGetFloatAt(dir, 0) *
-			ywidGetTurnTimer() / (double)10000;
+			turn_timer / (double)10000;
 		double advence_y = px_per_ms * yeGetFloatAt(dir, 1) *
-			ywidGetTurnTimer() / (double)10000;
+			turn_timer / (double)10000;
 
 		ywCanvasMoveObjXY(yeGet(b, 1), advence_x, advence_y);
 		yeSubFloat(life, yuiAbs(advence_y) +
@@ -774,9 +849,10 @@ void *redwall_init(int nb, void **args)
 {
 	rw = args[0];
 	yeAutoFree Entity *down_grp, *up_grp, *left_grp, *right_grp;
-	yeAutoFree Entity *fire_grp;
+	yeAutoFree Entity *fire_grp, *power_grp;
 
 	score = 0;
+	slow_power = 0;
 	yesCall(ygGet("tiled.setAssetPath"), "./");
 
 	down_grp = yevCreateGrp(0, 's', Y_DOWN_KEY);
@@ -784,6 +860,7 @@ void *redwall_init(int nb, void **args)
 	left_grp = yevCreateGrp(0, 'a', Y_LEFT_KEY);
 	right_grp = yevCreateGrp(0, 'd', Y_RIGHT_KEY);
 	fire_grp = yevCreateGrp(0, ' ');
+	power_grp = yevCreateGrp(0, 'x');
 
 	YEntityBlock {
 		rw.entries = {};
@@ -796,6 +873,7 @@ void *redwall_init(int nb, void **args)
 		rw.l_grp = left_grp;
 		rw.r_grp = right_grp;
 		rw.fire_grp = fire_grp;
+		rw.power_grp = power_grp;
 	}
 
 	enemies = yeCreateArray(rw, "enemies");
