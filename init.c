@@ -1021,7 +1021,7 @@ void *redwall_init(int nb, void **args)
 		pc.y = ywRectY(in);
 		pc.x = ywRectX(in);
 	}
-	pc.hp = 3;
+	pc.hp = 6;
 	pc.invulnerable = 0;
 	pc.dir_flag = PJ_DOWN;
 	old_tl = ywGetTurnLengthOverwrite();
