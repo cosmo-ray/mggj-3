@@ -36,6 +36,11 @@
 		"action" : "menuMainWidNext"
 	    },
 	    {
+		"text" : "How to Play",
+		"next" : "redwall.how-to-play",
+		"action" : "menuMainWidNext"
+	    },
+	    {
 		"text" : "Quit",
 		"action" : "FinishGame"
 	    }
@@ -51,6 +56,19 @@
 	"text" : [
 	    "Code: Matthias Gatto, License: LGPL v3, uso.itch.io",
 	    "Art: Mothnox, License: CC BY-SA 4.0, mothnox.itch.io"
+	],
+	"next" : "redwall.main"
+    },
+    "how-to-play": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 0 0 0 255",
+	"text-color": "rgba: 255 255 255 255",
+	"text" : [
+	    "Movements: arrows or WASD",
+	    "Slow Power: X",
+	    "Fire: space"
 	],
 	"next" : "redwall.main"
     },
