@@ -358,7 +358,7 @@ void create_bullet(Entity *mouse_pos)
 
 	switch (sprit_flag_pos()) {
 	case PJ_UP:
-		xadd = 20;
+		xadd = 15;
 		break;
 	case PJ_RIGHT:
 		xadd = 15;
@@ -390,7 +390,6 @@ void fire(struct weapon *w)
 	yeAutoFree Entity *p =
 		ywPosCreate(pc.x + xadd, pc.y + yadd, NULL, NULL);
 	ywPosSub(p, yeGet(rw_c, "cam"));
-	yePrint(p);
 	create_bullet(p);
 }
 
@@ -477,8 +476,8 @@ static int bullet_ai(struct unit *enemy)
 		speed_x /= 3;
 		speed_y /= 3;
 	}
-	enemy->x += enemy->x_speed * turn_timer / (double)10000;
-	enemy->y += enemy->y_speed * turn_timer / (double)10000;
+	enemy->x += speed_x * turn_timer / (double)10000;
+	enemy->y += speed_y * turn_timer / (double)10000;
 
 	if (enemy->reload <= 0) {
 		return 2;
@@ -502,7 +501,28 @@ static int bullet_ai(struct unit *enemy)
 
 static int macmahon_ai(struct unit *enemy)
 {
-	printf("MAC MAHON !\n");
+	Entity *cobj = yeGet(enemy->s, "canvas");
+
+	if (ywCanvasObjDistanceXY(cobj, pc.x, pc.y) < 700) {
+		if (enemy->reload <= 0) {
+			yeAutoFree Entity *pos = ywPosCreate(enemy->x, enemy->y,
+							     NULL, NULL);
+			enemy->reload = 111;
+			struct unit *b = create_enemy(&bullet, pos);
+			yeAutoFree Entity *pc_pos = ywPosCreate(pc.x + 12,
+								pc.y + 12,
+								NULL, NULL);
+			yeAutoFree Entity *seg = ywSegmentFromPos(pos, pc_pos,
+								  NULL, NULL);
+			int dis = ywPosDistance(pos, pc_pos);
+
+			b->reload = 150;
+			b->x_speed = 4.0 * ywSizeW(seg) / dis;
+			b->y_speed = 4.0 * ywSizeH(seg) / dis;
+		} else {
+			enemy->reload -= turn_timer / (double)10000;
+		}
+	}
 	return 0;
 }
 
