@@ -82,5 +82,16 @@
 	    "YOU LOSE !"
 	],
 	"next" : "redwall.main"
+    },
+    "win": {
+	"<type>" : "text-screen",
+	"text-align": "center",
+	"action" : "nextOnKeyDown",
+	"background" : "rgba: 255 255 255 255",
+	"text" : [
+	    "YOU WIN !"
+	],
+	"next" : "redwall.main"
     }
+
 }

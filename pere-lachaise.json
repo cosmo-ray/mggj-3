@@ -201,17 +201,6 @@
                 }, 
                 {
                  "height":0,
-                 "id":14,
-                 "name":"rat",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":890.319446131422,
-                 "y":593.951172112231
-                }, 
-                {
-                 "height":0,
                  "id":15,
                  "name":"rat",
                  "rotation":0,
@@ -413,9 +402,38 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":6,
+         "name":"Boss",
+         "objects":[
+                {
+                 "height":0,
+                 "id":33,
+                 "name":"Mac Mahon",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"score_require",
+                         "type":"int",
+                         "value":10
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":812.584269662921,
+                 "y":1402.24719101124
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":6,
- "nextobjectid":32,
+ "nextlayerid":7,
+ "nextobjectid":34,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.4.2",

@@ -41,8 +41,10 @@
     },
     "game": {
 	"<type>": "redwall",
+	"win": "callNext",
 	"die" : "callNextLose",
 	"next-lose": "redwall.story.die",
+	"next": "redwall.story.win",
 	"in": "wall_start"
     },
     "init-scripts" : [

@@ -48,6 +48,7 @@ struct unit {
 	double save_y;
 	Entity *s;
 	Entity *self;
+	int is_last;
 };
 
 static void init_ranger(struct unit *enemy)
@@ -59,6 +60,8 @@ static int mele_ai(struct unit *enemy);
 
 static int bullet_ai(struct unit *enemy);
 static int range_ai(struct unit *enemy);
+
+static int macmahon_ai(struct unit *enemy);
 
 struct type rat = {
 	"enemy_placeholder_melee.png", 24, 24,
@@ -82,6 +85,15 @@ struct type bullet = {
 	0,
 	bullet_ai, NULL
 };
+
+struct type macmahon = {
+	"boss_macmahon.png",
+	48, 48,
+	6, 25,
+	0,
+	macmahon_ai, NULL
+};
+
 static int time_acc;
 static int score;
 static double slow_power;
@@ -139,6 +151,7 @@ static Entity *rw_uc;
 static Entity *enemies;
 static Entity *entries;
 static Entity *rw_text;
+static Entity *boss;
 
 static Entity *sprite_man_handlerSetPos;
 static Entity *sprite_man_handlerAdvance;
@@ -443,6 +456,7 @@ static struct unit *create_enemy(struct type *t, Entity *pos)
 	enemy->s = yesCall(ygGet("sprite-man.createHandler"), s, rw_c);
 	enemy->self = yeCreateData(enemy, enemies, NULL);
 	yeSetFreeAdDestroy(enemy->self);
+	enemy->is_last = 0;
 	if (t->init)
 		t->init(enemy);
 	return enemy;
@@ -481,6 +495,12 @@ static int bullet_ai(struct unit *enemy)
 	return 0;
 }
 
+static int macmahon_ai(struct unit *enemy)
+{
+	printf("MAC MAHON !\n");
+	return 0;
+}
+
 static int range_ai(struct unit *enemy)
 {
 	Entity *cobj = yeGet(enemy->s, "canvas");
@@ -498,8 +518,6 @@ static int range_ai(struct unit *enemy)
 								  NULL, NULL);
 			int dis = ywPosDistance(pos, pc_pos);
 
-			printf("%f %f\n", 1.0 * ywSizeW(seg) / dis,
-			       1.0 * ywSizeH(seg) / dis);
 			b->reload = 150;
 			b->x_speed = 4.0 * ywSizeW(seg) / dis;
 			b->y_speed = 4.0 * ywSizeH(seg) / dis;
@@ -667,8 +685,6 @@ skipp_movement:;
 	int pow = yevIsGrpDown(evs, yeGet(rw, "power_grp"));
 
 	if (pow && pc.power_reload == 0) {
-		printf("activate power !\n");
-
 		yeAutoFree Entity *pow_sprite = yeCreateArray(NULL, NULL);
 		yeAutoFree Entity *pow_handler;
 		YEntityBlock {
@@ -678,13 +694,11 @@ skipp_movement:;
 			pow_sprite.sprite.size = 24;
 			pow_sprite.sprite["src-pos"] = 0;
 		}
-		printf("activate power 1!\n");
 		pow_handler = yesCall(ygGet("sprite-man.createHandler"),
 				      pow_sprite, rw_uc);
 
 		yeAutoFree Entity *pos = ywPosCreate(pc.x - 110, pc.y - 110,
 						     NULL, NULL);
-		printf("activate power 2!\n");
 		yesCall(sprite_man_handlerSetPos, pow_handler, pos);
 		pow_refresh(pow_handler);
 		for (int i = 0; i < 5; ++i) {
@@ -692,7 +706,6 @@ skipp_movement:;
 			pow_refresh(pow_handler);
 		}
 
-		printf("activate power 3!\n");
 		yesCall(ygGet("sprite-man.handlerNullify"), pow_handler);
 		pc.power_reload = 1000;
 		slow_power = 200;
@@ -744,10 +757,21 @@ skipp_movement:;
 				if (e->hp > 0) {
 					goto remove;
 				}
-				printf("%d - %d\n", e->hp, e->hp - 1);
+				/* kill enemy */
 				ywCanvasRemoveObj(rw_c, c);
 				yeRemoveChild(enemies, enemy);
 				++score;
+				if (e->is_last) {
+					Entity *win_fnc = ygGet(yeGetStringAt(rw, "win"));
+					printf("you win !!\n");
+					if (win_fnc) {
+						yesCall(win_fnc, rw);
+					} else {
+						ygTerminate();
+					}
+					return (void *)ACTION;
+
+				}
 				goto remove;
 			}
 		}
@@ -766,6 +790,18 @@ skipp_movement:;
 		ywCanvasMoveObjXY(yeGet(b, 1), advence_x, advence_y);
 		yeSubFloat(life, yuiAbs(advence_y) +
 			   yuiAbs(advence_x));
+	}
+
+	int i = 0;
+	YE_FOREACH(boss, bb) {
+		int score_req = yeGetIntAt(bb, 0);
+		int been_invocked = yeGetIntAt(bb, 1);
+
+		if (!been_invocked && score_req <= score) {
+			yeSetAt(bb, 1, 1);
+			create_enemy(&macmahon, yeGet(bb, 2))->is_last = 1;
+		}
+		i++;
 	}
 
 	YE_FOREACH(enemies, e) {
@@ -790,7 +826,6 @@ skipp_movement:;
 
 			ywCanvasNewRectangle(rw_c, 0, 0, 2048, 2048, "rgba: 0 0 0 255");
 			ywCanvasNewRectangle(rw_c, 0, 0, ww, wh, "rgba: 0 0 0 0");
-			Entity *die_fnc = ygGet(yeGetStringAt(rw, "die"));
 
 			lr = 0;
 			ud = 0;
@@ -810,6 +845,7 @@ skipp_movement:;
 			yeSetAt(yeGet(pc.s, "sp"), "src-pos", 288);
 			dead_refresh();
 
+			Entity *die_fnc = ygGet(yeGetStringAt(rw, "die"));
 			if (die_fnc) {
 				yesCall(die_fnc, rw);
 			} else {
@@ -842,6 +878,8 @@ void* redwall_destroy(int nb, void **args)
 	entries = NULL;
 	yeDestroy(rw_text);
 	rw_text = NULL;
+	yeDestroy(boss);
+	boss = NULL;
 	return NULL;
 }
 
@@ -878,6 +916,7 @@ void *redwall_init(int nb, void **args)
 
 	enemies = yeCreateArray(rw, "enemies");
 	entries = yeCreateArray(rw, "entries");
+	boss = yeCreateArray(rw, "boss");
 
 	sprite_man_handlerSetPos = ygGet("sprite-man.handlerSetPos");
 	sprite_man_handlerAdvance = ygGet("sprite-man.handlerAdvance");
@@ -952,9 +991,15 @@ void *redwall_init(int nb, void **args)
 		const char *name = yeGetStringAt(o, "name");
 
 		if (!strcmp(layer_name, "Entries")) {
-			printf("push entry: %s\n", name);
 			yePushBack(entries, rect, name);
 			continue;
+		} else if (!strcmp(layer_name, "Boss")) {
+			Entity *b = yeCreateArray(boss, name);
+
+			yeCreateInt(yeGetIntAt(o, "score_require"),
+				    b, "score_req");
+			yeCreateInt(0, b, "been_invocked");
+			yePushBack(b, rect, "rect");
 		}
 
 		if (!name)
@@ -969,6 +1014,7 @@ void *redwall_init(int nb, void **args)
 
 		create_enemy(t, rect);
 	}
+	yePrint(boss);
 
 	Entity *in = yeGet(entries, yeGetStringAt(rw, "in"));
 	if (in) {
