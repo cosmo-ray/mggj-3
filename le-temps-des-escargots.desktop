@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Le Temps Des Escargots
+GenericName=Top Down Shooter
+Comment=Small Top Down Shooter about 1871 Paris Commune
+Keywords=game;1871
+Exec=sh -c "le-temps-des-escargots >/dev/null 2>&1"
+Categories=Game;Shooter
