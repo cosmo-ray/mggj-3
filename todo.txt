@@ -1,0 +1,5 @@
+- MacMahon currently shoots the snail bullets, instead of the MC
+- The titlescreen art is squashed vertically
+- Might be good to have enemies that take more than one hit to defeat? Such as the melee ones. Possibly decrease speed a bit as a trade-off?
+- Display graphics at 2x size
+- Slow bomb feels a little disruptive to gameplay? A way to use it and have it take effect instantly instead of pausing the game, maybe playing the animation somewhere on the map instead, might feel better
