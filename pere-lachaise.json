@@ -416,10 +416,6 @@
         }, 
         {
          "firstgid":1923,
-         "source":"decorations-medieval.json"
-        }, 
-        {
-         "firstgid":1923,
          "source":"cimetery.json"
         }],
  "tilewidth":24,
