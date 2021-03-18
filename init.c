@@ -25,6 +25,12 @@ int old_tl;
 void *ylpcsCreateHandler(void *character, void *canvas,
 			 void *father, void *name);
 
+static const int TARGET_WIN_W = 640;
+static const int TARGET_WIN_H = 480;
+
+double w_mult;
+double h_mult;
+
 struct type {
 	const char *spath;
 	int w;
@@ -632,6 +638,7 @@ void *redwall_action(int nb, void **args)
 	Entity *evs = args[1];
 	static int lr = 0, ud = 0;
 	static double mv_acc;
+	static int is_blocked;
 
 	turn_timer = ywidGetTurnTimer() - wait_threshold;
 	wait_threshold = 0;
@@ -980,6 +987,8 @@ void *redwall_init(int nb, void **args)
 	void *ret = ywidNewWidget(rw, "container");
 	ww = ywRectW(yeGet(rw, "wid-pix"));
 	wh = ywRectH(yeGet(rw, "wid-pix"));
+
+	printf("w size: %d %d\n", ww, wh);
 
 	void *rr = yesCall(ygGet("tiled.fileToCanvas"),
 			   "./pere-lachaise.json", rw_c, rw_uc, 1);
