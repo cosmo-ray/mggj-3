@@ -20,6 +20,7 @@
 	"<type>": "menu",
         "text-align": "center",
 	"background": "titlescreen_art.png",
+	"background-stretch-height": 1,
 	"entries" : [
 	    {
 		"text" : "New Game",
