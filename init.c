@@ -744,8 +744,7 @@ void *redwall_action(int nb, void **args)
 			  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
 			  &ud, &lr, callback, NULL);
 
-	pc_move(mv_pix * lr * (ud ? 0.5 : 1),
-		mv_pix * ud * (lr ? 0.5 : 1));
+	pc_move(mv_pix * lr, mv_pix * ud);
 
 skipp_movement:;
 
