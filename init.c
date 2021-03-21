@@ -633,6 +633,44 @@ static int mele_ai(struct unit *enemy)
 
 }
 
+static void pc_move(int x, int y)
+{
+	int ox = pc.x, oy = pc.y;
+	pc.x += x;
+	if (pc.x + pc.w > yeGetIntAt(rw_c, "tiled-wpix")) {
+		pc.x = yeGetIntAt(rw_c, "tiled-wpix") - pc.w;
+	} else if (pc.x < 0) {
+		pc.x = 0;
+	}
+	pc.y += y;
+	if (pc.y + pc.h > yeGetIntAt(rw_c, "tiled-hpix")) {
+		pc.y = yeGetIntAt(rw_c, "tiled-wpix") - pc.h;
+	} else if (pc.y < 0) {
+		pc.y = 0;
+	}
+
+	yeAutoFree Entity *pc_rect = ywRectCreateInts(pc.x + 6, pc.y, 10,
+						      pc.h, NULL, NULL);
+	yeAutoFree Entity *col =
+		ywCanvasNewCollisionsArrayWithRectangle(rw_c, pc_rect);
+
+	YE_FOREACH(col, c) {
+		if (!yeGetIntAt(c, "Collision"))
+			continue;
+		yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
+						     NULL, NULL);
+
+		yesCall(sprite_man_handlerSetPos, pc.s, pos);
+		Entity *pc_c = yeGet(pc.s, "canvas");
+		if (ywCanvasObjectsCheckColisions(pc_c, c)) {
+			pc.x = ox;
+			pc.y = oy;
+			break;
+		}
+	}
+
+}
+
 void *redwall_action(int nb, void **args)
 {
 	Entity *evs = args[1];
@@ -669,8 +707,7 @@ void *redwall_action(int nb, void **args)
 		if (pc.invulnerable <= 0)
 			yeSetAt(pc.s, "text_idx", 0);
 		else if (pc.invulnerable > 50) {
-			pc.x += pc.knokback_x;
-			pc.y += pc.knokback_y;
+			pc_move(pc.knokback_x, pc.knokback_y);
 			/* skipp movement, but stil get input */
 			yeveDirFromDirGrp(evs, yeGet(rw, "u_grp"), yeGet(rw, "d_grp"),
 					  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
@@ -705,19 +742,7 @@ void *redwall_action(int nb, void **args)
 			  yeGet(rw, "l_grp"), yeGet(rw, "r_grp"),
 			  &ud, &lr, callback, NULL);
 
-	int ox = pc.x, oy = pc.y;
-	pc.x += mv_pix * lr;
-	if (pc.x + pc.w > yeGetIntAt(rw_c, "tiled-wpix")) {
-		pc.x = yeGetIntAt(rw_c, "tiled-wpix") - pc.w;
-	} else if (pc.x < 0) {
-		pc.x = 0;
-	}
-	pc.y += mv_pix * ud;
-	if (pc.y + pc.h > yeGetIntAt(rw_c, "tiled-hpix")) {
-		pc.y = yeGetIntAt(rw_c, "tiled-wpix") - pc.h;
-	} else if (pc.y < 0) {
-		pc.y = 0;
-	}
+	pc_move(mv_pix * lr, mv_pix * ud);
 
 skipp_movement:;
 
@@ -756,25 +781,6 @@ skipp_movement:;
 		slow_power = 200;
 	}
 
-	yeAutoFree Entity *pc_rect = ywRectCreateInts(pc.x + 6, pc.y, 10,
-						      pc.h, NULL, NULL);
-	yeAutoFree Entity *col =
-		ywCanvasNewCollisionsArrayWithRectangle(rw_c, pc_rect);
-
-	YE_FOREACH(col, c) {
-		if (!yeGetIntAt(c, "Collision"))
-			continue;
-		yeAutoFree Entity *pos = ywPosCreate(pc.x, pc.y,
-						     NULL, NULL);
-
-		yesCall(sprite_man_handlerSetPos, pc.s, pos);
-		Entity *pc_c = yeGet(pc.s, "canvas");
-		if (ywCanvasObjectsCheckColisions(pc_c, c)) {
-			pc.x = ox;
-			pc.y = oy;
-			break;
-		}
-	}
 
 	if ((lr || ud) && time_acc > 100000 && pc.dir0_flag) {
 		yesCall(sprite_man_handlerAdvance, pc.s);
