@@ -1,14 +1,14 @@
-- MacMahon currently shoots the snail bullets, instead of the MC
-- The titlescreen art is squashed vertically
-- Might be good to have enemies that take more than one hit to defeat? Such as the melee ones. Possibly decrease speed a bit as a trade-off?
-- Display graphics at 2x size
-- Slow bomb feels a little disruptive to gameplay? A way to use it and have it take effect instantly instead of pausing the game, maybe playing the animation somewhere on the map instead, might feel better
-- Fix diagonal movement speed
-- Make slow bomb decrease rate of fire instead of bullet speed?
-- Adjust difficulty curve by having fewer enemies at start, gradually increase. If needed, make boss require a few more kills to spawn for balance. 
-- Fix 'costum_property' turning collision on instead of causing layer to render over playr/enemies
-- Fix movement bug where moving in one direction, then quickly pressing the key for the opposite direction causes player to get stuck briefly
-- Fix bug with knockback where getting hit by multiple enemies(?) teleports player to corner of map, sometimes causing player to be stuck behind wall
-- Make bullets fire from center of character
-- Render slow bomb animation small without pausing, but briefly show a transparent colored (light green-brown?) overlay over rest of screen
-- Add music and sound effects
+- MacMahon currently shoots the snail bullets, instead of the MC [not sarted]
+- The titlescreen art is squashed vertically [Done but improvavle]
+- Might be good to have enemies that take more than one hit to defeat? Such as the melee ones. Possibly decrease speed a bit as a trade-off? [not started]
+- Display graphics at 2x size [not started]
+- Slow bomb feels a little disruptive to gameplay? A way to use it and have it take effect instantly instead of pausing the game, maybe playing the animation somewhere on the map instead, might feel better [not started]
+- Fix diagonal movement speed [not started]
+- Make slow bomb decrease rate of fire instead of bullet speed? [not started]
+- Adjust difficulty curve by having fewer enemies at start, gradually increase. If needed, make boss require a few more kills to spawn for balance. [not started]
+- Fix 'costum_property' turning collision on instead of causing layer to render over playr/enemies [done]
+- Fix movement bug where moving in one direction, then quickly pressing the key for the opposite direction causes player to get stuck briefly  [not started]
+- Fix bug with knockback where getting hit by multiple enemies(?) teleports player to corner of map, sometimes causing player to be stuck behind wall [done]
+- Make bullets fire from center of character [not started]
+- Render slow bomb animation small without pausing, but briefly show a transparent colored (light green-brown?) overlay over rest of screen [not started]
+- Add music and sound effects [not started]
