@@ -577,6 +577,9 @@ static int mele_ai(struct unit *enemy)
 			return 1;
 		}
 		x = pc.x - enemy->x;
+		y = pc.y - enemy->y;
+		advance = y && x ? advance / 2 : advance;
+
 		s = x;
 		x = yuiAbs(x) > advance ? advance : yuiAbs(x);
 		enemy->save_x += x - floor(x);
@@ -586,7 +589,6 @@ static int mele_ai(struct unit *enemy)
 		}
 		x = s < 0 ? -x : x;
 
-		y = pc.y - enemy->y;
 		s = y;
 		y = yuiAbs(y) > advance ? advance : yuiAbs(y);
 		enemy->save_y += y - floor(y);
