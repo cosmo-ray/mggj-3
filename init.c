@@ -781,6 +781,15 @@ skipp_movement:;
 		yesCall(ygGet("sprite-man.handlerNullify"), pow_handler);
 		pc.power_reload = 1000;
 		slow_power = 200;
+		YE_FOREACH(enemies, e) {
+			struct unit *enemy = yeGetData(e);
+
+			if (enemy->t == &bullet) {
+				ywCanvasRemoveObj(rw_c, yeGet(enemy->s, "canvas"));
+				yeRemoveChild(enemies, e);
+			}
+		}
+
 	}
 
 
