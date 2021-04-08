@@ -106,6 +106,8 @@ static int score;
 static double slow_power;
 static struct unit *current_boss;
 
+static Entity *pow_handler;
+
 struct {
 	struct type *t;
 	char *name;
@@ -197,8 +199,6 @@ static void pow_refresh(Entity *h)
 	Entity *c = yeGet(h, "canvas");
 	ywCanvasForceSizeXY(c, 240, 240);
 	ygUpdateScreen();
-	wait_threshold += 300000;
-	usleep(300000);
 }
 
 static void dead_refresh(void)
@@ -691,14 +691,26 @@ void *redwall_action(int nb, void **args)
 	yeStringAddInt(txt, score);
 
 	if (slow_power > 0) {
+		int osl = slow_power;
+		int test_val = osl - osl % 10;
+
 		slow_power -= turn_timer / (double)10000;
+
+		if (slow_power <= 150) {
+			yesCall(ygGet("sprite-man.handlerNullify"), pow_handler);
+			yeDestroy(pow_handler);
+			pow_handler = NULL;
+		} else if (osl > test_val && slow_power < test_val) {
+			yesCall(sprite_man_handlerAdvance, pow_handler);
+			pow_refresh(pow_handler);
+		}
 	}
 
 	if (pc.power_reload > 0) {
 		pc.power_reload -= turn_timer / (double)10000;
+		if (pc.power_reload < 0)
+			pc.power_reload = 0;
 	}
-	if (pc.power_reload < 0)
-		pc.power_reload = 0;
 
 	yeStringAdd(txt, "\nslow device ready: ");
 	yeStringAddInt(txt, 100 - pc.power_reload / 10);
@@ -758,7 +770,7 @@ skipp_movement:;
 
 	if (pow && pc.power_reload == 0) {
 		yeAutoFree Entity *pow_sprite = yeCreateArray(NULL, NULL);
-		yeAutoFree Entity *pow_handler;
+
 		YEntityBlock {
 			pow_sprite.sprite = {};
 			pow_sprite.sprite.path = "slow_bomb.png";
@@ -773,12 +785,7 @@ skipp_movement:;
 						     NULL, NULL);
 		yesCall(sprite_man_handlerSetPos, pow_handler, pos);
 		pow_refresh(pow_handler);
-		for (int i = 0; i < 5; ++i) {
-			yesCall(sprite_man_handlerAdvance, pow_handler);
-			pow_refresh(pow_handler);
-		}
 
-		yesCall(ygGet("sprite-man.handlerNullify"), pow_handler);
 		pc.power_reload = 1000;
 		slow_power = 200;
 		YE_FOREACH(enemies, e) {
